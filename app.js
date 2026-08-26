@@ -1,3 +1,7 @@
+import { createGeocodingClient } from './geocoding-client.js';
+import { createRoutingClient } from './routing-client.js';
+import { createSearchRequestState } from './search-state.js';
+
 /* ========================================
    SAKAY — App Logic (Sprint 1+)
    Transit Operations Calm: explicit place state,
@@ -12,6 +16,8 @@
   const DEFAULT_ZOOM = 12;
   const DEBOUNCE_MS = 400;
   const DEMO_MODE = new URLSearchParams(window.location.search).get('demo') === '1';
+  const geocodingClient = createGeocodingClient();
+  const routingClient = createRoutingClient();
 
   // --- DOM refs ---
   const inputOrigin = document.getElementById('input-origin');
@@ -74,7 +80,7 @@
 
   async function geocodeSearch(query) {
     if (query.length < 3) return [];
-    return window.SakayGeocoding.search(query);
+    return geocodingClient.search(query);
   }
 
   function setInputStatus(statusEl, message) {
@@ -100,6 +106,7 @@
   function selectSuggestion(state, index) {
     const place = state.results[index];
     if (!place) return;
+    state.searchState.select(place);
     state.input.value = place.label;
     state.setCoords([place.latitude, place.longitude]);
     state.input.dataset.placeId = place.placeId;
@@ -144,7 +151,7 @@
   }
 
   function initialiseSuggestionInput(input, listEl, statusEl, setCoords, placeType) {
-    const state = { input, listEl, statusEl, setCoords, results: [], activeIndex: -1, requestVersion: 0 };
+    const state = { input, listEl, statusEl, setCoords, results: [], activeIndex: -1, searchState: createSearchRequestState() };
     suggestionStates.set(listEl, state);
     const search = debounce(async (requestVersion) => {
       const query = input.value.trim();
@@ -155,19 +162,19 @@
       }
       try {
         const results = await geocodeSearch(query);
-        if (requestVersion !== state.requestVersion) return;
+        if (!state.searchState.isCurrent(requestVersion)) return;
         renderSuggestions(state, results);
       } catch (error) {
-        if (requestVersion !== state.requestVersion) return;
+        if (!state.searchState.isCurrent(requestVersion)) return;
         closeSuggestions(state);
         setInputStatus(statusEl, error.message || 'Location service is unavailable. Please try again shortly.');
       }
     }, DEBOUNCE_MS);
 
     input.addEventListener('input', () => {
-      state.requestVersion += 1;
+      const requestVersion = state.searchState.beginInput();
       clearPlaceSelection(input);
-      search(state.requestVersion);
+      search(requestVersion);
     });
 
     input.addEventListener('keydown', (event) => {
@@ -264,7 +271,7 @@
 
   async function reverseGeocode(lat, lng) {
     try {
-      return await window.SakayGeocoding.reverse(lat, lng);
+      return await geocodingClient.reverse(lat, lng);
     } catch {
       return null;
     }
@@ -1020,7 +1027,7 @@
         return;
       }
 
-      const result = await window.SakayRouting.plan({
+      const result = await routingClient.plan({
         origin: { latitude: originCoords[0], longitude: originCoords[1] },
         destination: { latitude: destinationCoords[0], longitude: destinationCoords[1] },
         departureTime: new Date().toISOString(),

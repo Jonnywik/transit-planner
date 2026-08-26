@@ -1,10 +1,8 @@
 /* Transit Operations Calm: journey results carry explicit availability and source metadata. */
-(function () {
-  'use strict';
-
-  window.SakayRouting = {
+export function createRoutingClient({ fetchImpl = globalThis.fetch, endpoint = '/api/routes' } = {}) {
+  return {
     async plan({ origin, destination, departureTime, limit = 3 }, signal) {
-      const response = await fetch('/api/routes', {
+      const response = await fetchImpl(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({ origin, destination, departureTime, limit }),
@@ -20,4 +18,4 @@
       return payload;
     },
   };
-})();
+}

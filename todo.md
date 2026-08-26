@@ -13,3 +13,11 @@
 - [x] Execute the complete automated test suite and collect a coverage baseline.
 - [x] Review uncovered source paths and prioritize high-risk coverage gaps.
 - [x] Deliver the coverage findings and recommended next tests.
+
+## Sprint 3 Coverage Hardening
+
+- [x] Extract a testable HTTP server factory and cover API/static response behavior end to end.
+- [x] Convert browser adapters into importable boundaries and test success, error, and abort behavior.
+- [x] Extract and test critical search-state helpers without relying on the full browser IIFE.
+- [x] Re-run native coverage, record the new baseline, and document residual UI coverage gaps.
+- [x] Commit and push the verified Sprint 3 change set.

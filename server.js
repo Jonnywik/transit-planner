@@ -5,11 +5,6 @@ import { fileURLToPath } from 'node:url';
 import { GatewayError, createGeocodingGateway } from './server/geocoding-gateway.js';
 import { RoutingProviderError, createOtpRoutingProvider } from './server/routing-provider.js';
 
-const rootDir = resolve(fileURLToPath(new URL('.', import.meta.url)));
-const port = Number(process.env.PORT || 3000);
-const gateway = createGeocodingGateway();
-const routingProvider = createOtpRoutingProvider();
-
 const contentTypes = {
   '.css': 'text/css; charset=utf-8',
   '.html': 'text/html; charset=utf-8',
@@ -42,15 +37,15 @@ async function readJsonBody(request) {
   }
 }
 
-async function handleApi(request, response, url) {
+async function handleApi(request, response, url, geocodingGateway, routingProvider) {
   try {
     if (request.method === 'GET' && url.pathname === '/api/geocode/search') {
-      const places = await gateway.search(url.searchParams.get('q'));
+      const places = await geocodingGateway.search(url.searchParams.get('q'));
       return sendJson(response, 200, { places });
     }
 
     if (request.method === 'GET' && url.pathname === '/api/geocode/reverse') {
-      const places = await gateway.reverse(url.searchParams.get('lat'), url.searchParams.get('lon'));
+      const places = await geocodingGateway.reverse(url.searchParams.get('lat'), url.searchParams.get('lon'));
       return sendJson(response, 200, { place: places[0] || null });
     }
 
@@ -69,7 +64,7 @@ async function handleApi(request, response, url) {
   }
 }
 
-function serveStatic(response, pathname) {
+function serveStatic(response, pathname, rootDir) {
   const requestedPath = pathname === '/' ? '/index.html' : pathname;
   const filePath = normalize(join(rootDir, requestedPath));
   if (!filePath.startsWith(rootDir) || !existsSync(filePath)) {
@@ -87,15 +82,29 @@ function serveStatic(response, pathname) {
   createReadStream(filePath).pipe(response);
 }
 
-const server = createServer((request, response) => {
-  const url = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
-  if (url.pathname.startsWith('/api/')) {
-    handleApi(request, response, url);
-    return;
-  }
-  serveStatic(response, url.pathname);
-});
+export function createSakayServer({
+  rootDir = resolve(fileURLToPath(new URL('.', import.meta.url))),
+  geocodingGateway = createGeocodingGateway(),
+  routingProvider = createOtpRoutingProvider(),
+} = {}) {
+  return createServer((request, response) => {
+    const url = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
+    if (url.pathname.startsWith('/api/')) {
+      handleApi(request, response, url, geocodingGateway, routingProvider);
+      return;
+    }
+    serveStatic(response, url.pathname, rootDir);
+  });
+}
 
-server.listen(port, () => {
-  console.log(`Sakay is running at http://localhost:${port}`);
-});
+export function startServer({ port = Number(process.env.PORT || 3000), ...options } = {}) {
+  const server = createSakayServer(options);
+  server.listen(port, () => {
+    const address = server.address();
+    const listeningPort = typeof address === 'object' && address ? address.port : port;
+    console.log(`Sakay is running at http://localhost:${listeningPort}`);
+  });
+  return server;
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) startServer();

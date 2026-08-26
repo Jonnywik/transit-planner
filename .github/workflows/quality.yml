@@ -18,7 +18,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Run gateway contract tests
-        run: npm test
+      - name: Run tests with native coverage
+        run: npm run coverage
       - name: Check JavaScript syntax
         run: npm run check
