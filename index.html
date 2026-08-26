@@ -2,186 +2,133 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Plan your Metro Manila commute with step-by-step public transit directions — bus, MRT/LRT, jeepney, tricycle, and ferry routes with real-time tracking and fare estimates.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Sakay is a mobile-first Metro Manila transit planner for finding a clear next move.">
   <meta property="og:title" content="Sakay — Metro Manila Transit Route Planner">
-  <meta property="og:description" content="Step-by-step public transit directions for Metro Manila. Find the fastest, cheapest route by bus, train, jeepney, and more.">
+  <meta property="og:description" content="Plan your next Metro Manila transit journey with Sakay.">
   <meta property="og:type" content="website">
-  <title>Sakay — Metro Manila Transit Route Planner</title>
+  <title>Sakay — Metro Manila Transit</title>
+  <link rel="icon" type="image/png" href="https://3000-itph7nc61pkgr18fbw6gh-aca06218.sg1.manus.computer/manus-storage/sakay-logo-mark_3f13a549.png">
 
-  <!-- Fonts -->
+  <!-- Signal Ribbon: Manrope brings compact warmth; DM Mono distinguishes route metadata. -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
-  <!-- App CSS -->
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="app" class="app">
+    <main id="map-container" class="map-container" aria-label="Metro Manila transit map">
+      <div id="map" class="map"></div>
+      <div class="map-wordmark" aria-hidden="true">
+        <span class="map-wordmark__eyebrow">Metro Manila</span>
+        <strong>Move with the city.</strong>
+      </div>
 
-    <!-- Header -->
+      <button id="btn-explore" class="btn-explore" type="button" title="Explore area routes">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+        </svg>
+        <span>Nearby lines</span>
+      </button>
+
+      <aside id="explorer-panel" class="explorer-panel" aria-label="Route explorer" hidden>
+        <div class="explorer-panel__header">
+          <div>
+            <p class="eyebrow">Around you</p>
+            <h2 class="explorer-panel__title">Nearby lines</h2>
+          </div>
+          <button id="btn-close-explorer" class="icon-button" title="Close explorer" aria-label="Close explorer">&times;</button>
+        </div>
+        <div class="explorer-panel__filters">
+          <label class="mode-toggle"><input type="checkbox" data-mode="RAIL" checked><span class="mode-toggle__swatch" style="--swatch-color:#D5333E"></span><span>Rail</span></label>
+          <label class="mode-toggle"><input type="checkbox" data-mode="BUS" checked><span class="mode-toggle__swatch" style="--swatch-color:#123F73"></span><span>Bus</span></label>
+          <label class="mode-toggle"><input type="checkbox" data-mode="JEEPNEY" checked><span class="mode-toggle__swatch" style="--swatch-color:#E7A83C"></span><span>Jeepney</span></label>
+          <label class="mode-toggle"><input type="checkbox" data-mode="TRICYCLE"><span class="mode-toggle__swatch" style="--swatch-color:#5A8E78"></span><span>Tricycle</span></label>
+          <label class="mode-toggle"><input type="checkbox" data-mode="FERRY"><span class="mode-toggle__swatch" style="--swatch-color:#5D94B8"></span><span>Ferry</span></label>
+        </div>
+        <div id="explorer-route-detail" class="explorer-route-detail" hidden></div>
+      </aside>
+      <div id="map-legend" class="map-legend" hidden><div class="map-legend__title">Map key</div><div id="map-legend-items" class="map-legend__items"></div></div>
+    </main>
+
     <header id="app-header" class="header">
       <div class="header__brand">
-        <span class="header__icon" aria-hidden="true">🧭</span>
-        <h1 class="header__title">Sakay</h1>
-        <span class="header__subtitle">Metro Manila Transit</span>
+        <span class="header__logo" aria-hidden="true"><span class="header__logo-node"></span></span>
+        <div>
+          <h1 class="header__title">Sakay</h1>
+          <p class="header__subtitle">Metro Manila transit</p>
+        </div>
       </div>
       <div class="header__actions">
-        <button id="btn-pwd-toggle" class="btn-pwd" type="button" title="Toggle PWD / Accessibility Mode" aria-pressed="false">
-          <span aria-hidden="true">♿</span>
-          <span class="btn-pwd__label">PWD</span>
+        <button id="btn-pwd-toggle" class="btn-pwd" type="button" title="Toggle accessibility options" aria-pressed="false">
+          <span aria-hidden="true">♿</span><span class="btn-pwd__label">Access</span>
         </button>
       </div>
     </header>
 
-    <!-- Search Panel -->
-    <section id="search-panel" class="search-panel" aria-label="Route search">
+    <div id="weather-banner" class="weather-banner" hidden></div>
+
+    <section id="search-panel" class="search-panel" aria-label="Plan a journey">
+      <div class="sheet-handle" aria-hidden="true"></div>
       <form id="route-form" class="route-form" autocomplete="off">
+        <div class="sheet-heading">
+          <p class="eyebrow">Plan a trip</p>
+          <h2>Where are you heading?</h2>
+        </div>
+
         <div class="route-form__fields">
-          <div class="input-group">
-            <label for="input-origin" class="input-group__label">From</label>
+          <div class="input-group input-group--origin">
+            <label for="input-origin" class="input-group__label">Leaving from</label>
             <div class="input-group__wrapper">
-              <span class="input-group__icon" aria-hidden="true">📍</span>
-              <input
-                type="text"
-                id="input-origin"
-                class="input-group__input"
-                placeholder="Enter origin (e.g. Quezon Ave Station)"
-                role="combobox"
-                aria-autocomplete="list"
-                aria-controls="origin-suggestions"
-                aria-expanded="false"
-                required
-              >
+              <span class="input-group__marker" aria-hidden="true"></span>
+              <input type="text" id="input-origin" class="input-group__input" placeholder="Your starting point" role="combobox" aria-autocomplete="list" aria-controls="origin-suggestions" aria-expanded="false" required>
               <button type="button" id="btn-gps" class="btn-gps" title="Use my location" aria-label="Use my current location">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="3"/>
-                  <path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>
-                </svg>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
               </button>
             </div>
             <ul id="origin-suggestions" class="suggestions" role="listbox" aria-label="Origin suggestions"></ul>
             <p id="origin-status" class="input-group__status" role="status" aria-live="polite">Enter at least three characters to search for an origin.</p>
           </div>
 
-          <!-- Reverse Trip Button -->
           <button type="button" id="btn-reverse" class="btn-reverse" title="Swap origin and destination" aria-label="Swap origin and destination">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/>
-            </svg>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
           </button>
 
-          <div class="input-group">
-            <label for="input-destination" class="input-group__label">To</label>
+          <div class="input-group input-group--destination">
+            <label for="input-destination" class="input-group__label">Going to</label>
             <div class="input-group__wrapper">
-              <span class="input-group__icon" aria-hidden="true">📌</span>
-              <input
-                type="text"
-                id="input-destination"
-                class="input-group__input"
-                placeholder="Enter destination (e.g. Ayala Station)"
-                role="combobox"
-                aria-autocomplete="list"
-                aria-controls="destination-suggestions"
-                aria-expanded="false"
-                required
-              >
+              <span class="input-group__marker" aria-hidden="true"></span>
+              <input type="text" id="input-destination" class="input-group__input" placeholder="A station, landmark, or address" role="combobox" aria-autocomplete="list" aria-controls="destination-suggestions" aria-expanded="false" required>
             </div>
             <ul id="destination-suggestions" class="suggestions" role="listbox" aria-label="Destination suggestions"></ul>
             <p id="destination-status" class="input-group__status" role="status" aria-live="polite">Enter at least three characters to search for a destination.</p>
           </div>
         </div>
-        <!-- Passenger Type -->
-        <div class="passenger-type" id="passenger-type-group">
-          <label for="select-passenger" class="passenger-type__label">Passenger</label>
-          <select id="select-passenger" class="passenger-type__select">
-            <option value="regular">Regular</option>
-            <option value="student">Student (20% off)</option>
-            <option value="senior">Senior (20% off)</option>
-            <option value="pwd">PWD (20% off)</option>
-          </select>
-        </div>
 
-        <button type="submit" id="btn-search" class="btn-search">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"/>
-            <path d="M21 21l-4.35-4.35"/>
-          </svg>
-          <span>Find Route</span>
-        </button>
+        <div class="route-form__footer">
+          <div class="passenger-type" id="passenger-type-group">
+            <label for="select-passenger" class="passenger-type__label">Fare type</label>
+            <select id="select-passenger" class="passenger-type__select">
+              <option value="regular">Regular</option>
+              <option value="student">Student</option>
+              <option value="senior">Senior</option>
+              <option value="pwd">PWD</option>
+            </select>
+          </div>
+          <button type="submit" id="btn-search" class="btn-search">
+            <span>Show routes</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
       </form>
     </section>
 
-    <!-- Map -->
-    <main id="map-container" class="map-container" aria-label="Transit map">
-      <div id="map" class="map"></div>
-
-      <!-- Floating explore button -->
-      <button id="btn-explore" class="btn-explore" type="button" title="Explore area routes">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
-        </svg>
-        <span>Explore Routes</span>
-      </button>
-
-      <!-- Explorer Panel -->
-      <aside id="explorer-panel" class="explorer-panel" aria-label="Route explorer" hidden>
-        <div class="explorer-panel__header">
-          <h2 class="explorer-panel__title">Explore Routes</h2>
-          <button id="btn-close-explorer" class="explorer-panel__close" title="Close explorer" aria-label="Close explorer">&times;</button>
-        </div>
-        <div class="explorer-panel__filters">
-          <label class="mode-toggle">
-            <input type="checkbox" data-mode="RAIL" checked>
-            <span class="mode-toggle__swatch" style="--swatch-color: #ef4444"></span>
-            <span>🚆 Train (MRT/LRT)</span>
-          </label>
-          <label class="mode-toggle">
-            <input type="checkbox" data-mode="BUS" checked>
-            <span class="mode-toggle__swatch" style="--swatch-color: #3b82f6"></span>
-            <span>🚌 Bus</span>
-          </label>
-          <label class="mode-toggle">
-            <input type="checkbox" data-mode="JEEPNEY" checked>
-            <span class="mode-toggle__swatch" style="--swatch-color: #f59e0b"></span>
-            <span>🚐 Jeepney</span>
-          </label>
-          <label class="mode-toggle">
-            <input type="checkbox" data-mode="TRICYCLE">
-            <span class="mode-toggle__swatch" style="--swatch-color: #22c55e"></span>
-            <span>🛺 Tricycle</span>
-          </label>
-          <label class="mode-toggle">
-            <input type="checkbox" data-mode="FERRY">
-            <span class="mode-toggle__swatch" style="--swatch-color: #06b6d4"></span>
-            <span>🚢 Ferry</span>
-          </label>
-        </div>
-        <div id="explorer-route-detail" class="explorer-route-detail" hidden></div>
-      </aside>
-
-      <!-- Legend -->
-      <div id="map-legend" class="map-legend" hidden>
-        <div class="map-legend__title">Legend</div>
-        <div id="map-legend-items" class="map-legend__items"></div>
-      </div>
-    </main>
-    <!-- Weather Banner -->
-    <div id="weather-banner" class="weather-banner" hidden></div>
-
-    <!-- Results Panel -->
-    <section id="results-panel" class="results-panel" aria-label="Route results" hidden>
-    </section>
-
+    <section id="results-panel" class="results-panel" aria-label="Route results" hidden></section>
   </div>
 
-  <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <!-- App JS, including same-origin provider boundaries -->
   <script type="module" src="app.js"></script>
 </body>
 </html>

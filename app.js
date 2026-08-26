@@ -2,11 +2,9 @@ import { createGeocodingClient } from './geocoding-client.js';
 import { createRoutingClient } from './routing-client.js';
 import { createSearchRequestState } from './search-state.js';
 
-/* ========================================
-   SAKAY — App Logic (Sprint 1+)
-   Transit Operations Calm: explicit place state,
-   controlled geocoding, and clear route status
-   ======================================== */
+/* Signal Ribbon — mobile-first map canvas + thumb-reachable planning sheet.
+   This interaction layer preserves explicit place state, controlled geocoding,
+   and clear route availability while the UI adopts Sakay Blue / Route Red / Paper White. */
 
 (function () {
   'use strict';

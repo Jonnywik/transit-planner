@@ -36,3 +36,22 @@
 - [x] Analyze HTTP, browser, validation, and secret-handling controls for verified risks.
 - [x] Validate findings, assign remediation priority, and document residual risk.
 - [x] Deliver the audit report and supporting evidence.
+
+## Local Run
+
+- [x] Start the application locally using the repository runtime command.
+- [x] Confirm the local HTTP service is healthy and provide the access URL.
+
+## Live Integration and Performance Test
+
+- [x] Verify static delivery and public API success/error contracts against the running server.
+- [x] Exercise concurrent local requests and record response-time measurements.
+- [x] Deliver the test findings and runtime limitations.
+
+## Mobile-first UI/UX Redesign
+
+- [x] Analyze the supplied mobile-app references and commit a distinct mobile-first design direction.
+- [x] Create an original, text-free Sakay logo and prepare it for header and favicon use.
+- [x] Rebuild the interface around thumb-reachable mobile route planning, map context, and responsive route cards.
+- [x] Validate mobile and desktop layouts, then refine the visual system and interaction states.
+- [x] Commit and push the completed redesign.
