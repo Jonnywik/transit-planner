@@ -3,10 +3,12 @@ import { createReadStream, existsSync } from 'node:fs';
 import { extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { GatewayError, createGeocodingGateway } from './server/geocoding-gateway.js';
+import { RoutingProviderError, createOtpRoutingProvider } from './server/routing-provider.js';
 
 const rootDir = resolve(fileURLToPath(new URL('.', import.meta.url)));
 const port = Number(process.env.PORT || 3000);
 const gateway = createGeocodingGateway();
+const routingProvider = createOtpRoutingProvider();
 
 const contentTypes = {
   '.css': 'text/css; charset=utf-8',
@@ -25,25 +27,45 @@ function sendJson(response, status, body) {
   response.end(JSON.stringify(body));
 }
 
+async function readJsonBody(request) {
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of request) {
+    size += chunk.length;
+    if (size > 16_384) throw new RoutingProviderError('Request body is too large.', { status: 413, code: 'REQUEST_TOO_LARGE' });
+    chunks.push(chunk);
+  }
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+  } catch {
+    throw new RoutingProviderError('Request body must be valid JSON.', { status: 400, code: 'INVALID_REQUEST' });
+  }
+}
+
 async function handleApi(request, response, url) {
   try {
-    if (request.method !== 'GET') return sendJson(response, 405, { error: 'Method not allowed.' });
-
-    if (url.pathname === '/api/geocode/search') {
+    if (request.method === 'GET' && url.pathname === '/api/geocode/search') {
       const places = await gateway.search(url.searchParams.get('q'));
       return sendJson(response, 200, { places });
     }
 
-    if (url.pathname === '/api/geocode/reverse') {
+    if (request.method === 'GET' && url.pathname === '/api/geocode/reverse') {
       const places = await gateway.reverse(url.searchParams.get('lat'), url.searchParams.get('lon'));
       return sendJson(response, 200, { place: places[0] || null });
     }
 
+    if (request.method === 'POST' && url.pathname === '/api/routes') {
+      const requestBody = await readJsonBody(request);
+      const result = await routingProvider.plan(requestBody, request.headers['accept-language'] || 'en');
+      return sendJson(response, 200, result);
+    }
+
     return sendJson(response, 404, { error: 'Not found.' });
   } catch (error) {
-    const status = error instanceof GatewayError ? error.status : 500;
-    const message = error instanceof GatewayError ? error.message : 'An unexpected location-service error occurred.';
-    return sendJson(response, status, { error: message });
+    const knownError = error instanceof GatewayError || error instanceof RoutingProviderError;
+    const status = knownError ? error.status : 500;
+    const message = knownError ? error.message : 'An unexpected service error occurred.';
+    return sendJson(response, status, { error: message, code: knownError ? error.code || null : 'INTERNAL_ERROR' });
   }
 }
 

@@ -11,6 +11,7 @@
   const METRO_MANILA_CENTER = [14.5995, 120.9842];
   const DEFAULT_ZOOM = 12;
   const DEBOUNCE_MS = 400;
+  const DEMO_MODE = new URLSearchParams(window.location.search).get('demo') === '1';
 
   // --- DOM refs ---
   const inputOrigin = document.getElementById('input-origin');
@@ -35,6 +36,10 @@
   let passengerType = 'regular';
   let currentRoutes = null;
   let routeLayers = [];
+
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
+  }
 
   // =====================
   // MAP INITIALIZATION
@@ -712,7 +717,19 @@
   // =====================
   // RESULTS RENDERING
   // =====================
-  function renderResults(routes) {
+  function renderAvailabilityState({ title, message, icon = 'ⓘ' }) {
+    resultsPanel.hidden = false;
+    currentRoutes = null;
+    clearMapLayers();
+    resultsPanel.innerHTML = `
+      <div class="results-empty results-empty--status" role="status" aria-live="polite">
+        <span class="results-empty__icon" aria-hidden="true">${icon}</span>
+        <p>${escapeHtml(title)}</p>
+        <p class="results-empty__hint">${escapeHtml(message)}</p>
+      </div>`;
+  }
+
+  function renderResults(routes, source = null) {
     resultsPanel.hidden = false;
     resultsPanel.innerHTML = '';
 
@@ -720,16 +737,20 @@
       resultsPanel.innerHTML = `
         <div class="results-empty">
           <span class="results-empty__icon">🔍</span>
-          <p>No routes found between these locations.</p>
-          <p class="results-empty__hint">Try different locations within Metro Manila.</p>
+          <p>No scheduled route was found between these locations.</p>
+          <p class="results-empty__hint">Try different locations, a different departure time, or a supported area.</p>
         </div>`;
       return;
     }
 
     const header = document.createElement('div');
     header.className = 'results-header';
+    const sourceLabel = source?.demo ? 'Demo fixtures — not for travel decisions' : source?.provider ? `${source.provider} ${source.apiVersion || ''} · ${source.status || 'schedule'} data` : 'Schedule data';
     header.innerHTML = `
-      <h2 class="results-header__title">${routes.length} route${routes.length > 1 ? 's' : ''} found</h2>
+      <div>
+        <h2 class="results-header__title">${routes.length} route${routes.length > 1 ? 's' : ''} found</h2>
+        <p class="results-header__source">${escapeHtml(sourceLabel)}</p>
+      </div>
       <button id="btn-close-results" class="results-header__close" title="Close results" aria-label="Close results">&times;</button>
     `;
     resultsPanel.appendChild(header);
@@ -747,10 +768,12 @@
 
       const transferText = route.transfers === 0 ? 'Direct' : `${route.transfers} transfer${route.transfers > 1 ? 's' : ''}`;
       const modeIcons = [...new Set(route.legs.filter(l => l.mode !== 'WALK').map(l => MODE_ICONS[l.mode] || '🚌'))].join(' ');
-      const fareInfo = applyDiscount(route.fare);
+      const fareInfo = Number.isFinite(route.fare) ? applyDiscount(route.fare) : null;
 
       let fareHtml;
-      if (fareInfo.discount > 0) {
+      if (!fareInfo) {
+        fareHtml = `<div class="route-card__fare route-card__fare--unavailable">Fare unavailable</div>`;
+      } else if (fareInfo.discount > 0) {
         fareHtml = `
           <div class="route-card__fare-detail">
             <span class="route-card__fare-original">₱${fareInfo.base}</span>
@@ -802,7 +825,8 @@
     const icon = MODE_ICONS[leg.mode] || '🚌';
     const color = MODE_COLORS[leg.mode] || '#3b82f6';
     const isWalk = leg.mode === 'WALK';
-    const distText = leg.distance >= 1000 ? `${(leg.distance / 1000).toFixed(1)} km` : `${leg.distance} m`;
+    const distText = Number.isFinite(leg.distance) ? (leg.distance >= 1000 ? `${(leg.distance / 1000).toFixed(1)} km` : `${leg.distance} m`) : 'Distance unavailable';
+    const modeLabel = isWalk ? 'Walk' : (leg.route || leg.mode);
 
     let stopsInfo = '';
     if (leg.intermediateStops && leg.intermediateStops.length > 0) {
@@ -811,7 +835,7 @@
 
     // Fare breakdown per leg
     let fareHtml = '';
-    if (leg.fare) {
+    if (Number.isFinite(leg.fare)) {
       const fareInfo = applyDiscount(leg.fare);
       if (fareInfo.discount > 0) {
         fareHtml = `
@@ -831,9 +855,9 @@
       paymentHtml = `<span class="leg__payment">${leg.payment}</span>`;
     }
 
-    // Accessibility icons for transit stops
+    // Demo-only accessibility fixtures. Production routes do not claim accessibility coverage yet.
     let accessHtml = '';
-    if (!isWalk) {
+    if (DEMO_MODE && !isWalk) {
       const fromAccess = getStopAccessibility(leg.from.name);
       const toAccess = getStopAccessibility(leg.to.name);
       const icons = [];
@@ -850,29 +874,7 @@
       }
     }
 
-    // Real-time prediction + traffic
-    let realtimeHtml = '';
-    if (!isWalk) {
-      const prediction = getPredictedArrival(leg);
-      const corridor = detectCorridor(leg.route);
-      const traffic = corridor ? getTrafficMultiplier(corridor) : null;
-
-      const parts = [];
-
-      if (prediction && prediction.hasRealtime) {
-        parts.push(`<span class="leg__prediction">${prediction.status.badge} ${prediction.text}</span>`);
-      } else if (prediction && !prediction.hasRealtime) {
-        parts.push('<span class="leg__schedule-only">📋 Schedule only</span>');
-      }
-
-      if (traffic && traffic.level !== 'unknown') {
-        parts.push(getTrafficBadge(traffic.level));
-      }
-
-      if (parts.length) {
-        realtimeHtml = `<div class="leg__realtime">${parts.join(' ')}</div>`;
-      }
-    }
+    const realtimeHtml = !isWalk ? '<div class="leg__realtime"><span class="leg__schedule-only">📋 Schedule data</span></div>' : '';
 
     return `
       <div class="leg ${isWalk ? 'leg--walk' : ''}" style="--leg-color: ${color}">
@@ -883,14 +885,14 @@
         <div class="leg__content">
           <div class="leg__header">
             <span class="leg__icon">${icon}</span>
-            <span class="leg__mode">${isWalk ? 'Walk' : (leg.route || leg.mode)}</span>
+            <span class="leg__mode">${escapeHtml(modeLabel)}</span>
             <span class="leg__duration">${leg.duration} min</span>
             <span class="leg__distance">${distText}</span>
           </div>
           <div class="leg__detail">
-            <span class="leg__from">${leg.from.name}</span>
+            <span class="leg__from">${escapeHtml(leg.from.name)}</span>
             <span class="leg__arrow">→</span>
-            <span class="leg__to">${leg.to.name}</span>
+            <span class="leg__to">${escapeHtml(leg.to.name)}</span>
             ${stopsInfo}
             ${paymentHtml}
           </div>
@@ -1011,15 +1013,28 @@
         }
       }
 
-      // Simulate network delay
-      await new Promise((r) => setTimeout(r, 800));
+      if (DEMO_MODE) {
+        const routes = generateMockRoutes(originCoords, destinationCoords);
+        currentRoutes = routes;
+        renderResults(routes, { demo: true });
+        return;
+      }
 
-      // Generate mock routes
-      const routes = generateMockRoutes(originCoords, destinationCoords);
-      currentRoutes = routes;
-      renderResults(routes);
+      const result = await window.SakayRouting.plan({
+        origin: { latitude: originCoords[0], longitude: originCoords[1] },
+        destination: { latitude: destinationCoords[0], longitude: destinationCoords[1] },
+        departureTime: new Date().toISOString(),
+        limit: 3,
+      });
+      currentRoutes = result.itineraries;
+      if (result.availability === 'NO_ROUTE') {
+        renderAvailabilityState({ title: 'No scheduled route found.', message: 'Try a different departure time or locations within the supported service area.', icon: '⌕' });
+      } else {
+        renderResults(result.itineraries, result.source);
+      }
     } catch (error) {
-      showToast('Error finding routes. Try again.');
+      renderAvailabilityState({ title: 'Routing service unavailable.', message: error.message || 'This prototype cannot provide live journey guidance at the moment.', icon: '!' });
+      showToast(error.message || 'Routing service unavailable.');
       console.error('Search error:', error);
     } finally {
       resetButton();
@@ -1217,7 +1232,15 @@
     setTimeout(() => map.invalidateSize(), 350);
   }
 
-  btnExplore.addEventListener('click', () => toggleExplorer());
+  if (!DEMO_MODE) {
+    btnExplore.disabled = true;
+    btnExplore.title = 'Verified route explorer data is not available yet';
+    btnExplore.setAttribute('aria-label', 'Route explorer is unavailable until verified data is connected');
+  }
+
+  btnExplore.addEventListener('click', () => {
+    if (DEMO_MODE) toggleExplorer();
+  });
   btnCloseExplorer.addEventListener('click', () => toggleExplorer(false));
 
   function clearExplorerLayers() {
@@ -1482,8 +1505,8 @@
     }, VEHICLE_REFRESH_MS);
   }
 
-  // Start tracking on load
-  startVehicleTracking();
+  // Mock vehicle tracking is demo-only and never represents live operations.
+  if (DEMO_MODE) startVehicleTracking();
 
   // =====================
   // TRAFFIC-AWARE ETAs

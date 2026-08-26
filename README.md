@@ -33,4 +33,6 @@ The default gateway is configured for a Nominatim-compatible endpoint. Any produ
 
 ## Current limitations
 
-Routing, fares, vehicle positions, traffic, route explorer data, and accessibility data are still local demo fixtures. Sprint 2 replaces the production route path with a version-pinned OpenTripPlanner integration and validated static transit data.
+The production route path now calls a version-pinned OpenTripPlanner GraphQL adapter only when a deployment supplies a validated routing graph and the required `OTP_GRAPHQL_URL` and `OTP_API_VERSION` configuration. Until then, the interface returns an explicit unavailable state; it never generates a route as if it were live. See [`docs/ROUTING_CONTRACT.md`](docs/ROUTING_CONTRACT.md) for the required configuration, response contract, and pre-enable verification process.
+
+Fares, vehicle positions, traffic, route-explorer data, and accessibility guarantees remain unavailable in production. The original local fixtures can be viewed only with `?demo=1` and are visibly labeled as demo data, not travel guidance.

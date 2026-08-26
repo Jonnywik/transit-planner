@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check app.js && node --check geocoding-client.js && node --check server.js && node --check server/geocoding-gateway.js",
+    "check": "node --check app.js && node --check geocoding-client.js && node --check routing-client.js && node --check server.js && node --check server/geocoding-gateway.js && node --check server/routing-provider.js",
     "dev": "node server.js",
     "start": "node server.js",
     "test": "node --test"
