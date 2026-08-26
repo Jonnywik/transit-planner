@@ -28,3 +28,11 @@
 - [x] Upgrade the workflow to verify pull requests, main-branch pushes, and manual runs with coverage and syntax checks.
 - [x] Document the status check that should be required by branch protection.
 - [x] Validate, commit, and push the CI workflow.
+
+## Security and Dependency Audit
+
+- [x] Inventory exposed runtime, dependency, configuration, and automation surfaces.
+- [x] Run dependency and supply-chain vulnerability checks; review workflow action provenance.
+- [x] Analyze HTTP, browser, validation, and secret-handling controls for verified risks.
+- [x] Validate findings, assign remediation priority, and document residual risk.
+- [x] Deliver the audit report and supporting evidence.
