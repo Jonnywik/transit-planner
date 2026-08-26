@@ -1,6 +1,6 @@
 /* ========================================
-   SAKAY — Metro Manila Transit Planner
-   Design System & Global Styles
+   SAKAY — Transit Operations Calm
+   High-clarity, map-first civic wayfinding
    ======================================== */
 
 /* --- CSS Variables / Design Tokens --- */
@@ -360,6 +360,14 @@ body {
 .suggestions li[aria-selected="true"] {
   background: var(--bg-surface-hover);
   color: var(--text-primary);
+}
+
+.input-group__status {
+  min-height: 1.25rem;
+  margin: 0.45rem 0 0;
+  color: var(--text-secondary);
+  font-size: var(--font-xs);
+  line-height: 1.35;
 }
 
 @keyframes slide-down {

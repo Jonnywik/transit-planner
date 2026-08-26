@@ -1,7 +1,7 @@
 /* ========================================
-   SAKAY — App Logic (Sprint 5)
-   Real-time tracking, traffic-aware ETAs,
-   live vehicle markers, status badges
+   SAKAY — App Logic (Sprint 1+)
+   Transit Operations Calm: explicit place state,
+   controlled geocoding, and clear route status
    ======================================== */
 
 (function () {
@@ -10,7 +10,6 @@
   // --- Constants ---
   const METRO_MANILA_CENTER = [14.5995, 120.9842];
   const DEFAULT_ZOOM = 12;
-  const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
   const DEBOUNCE_MS = 400;
 
   // --- DOM refs ---
@@ -18,6 +17,8 @@
   const inputDestination = document.getElementById('input-destination');
   const originSuggestions = document.getElementById('origin-suggestions');
   const destinationSuggestions = document.getElementById('destination-suggestions');
+  const originStatus = document.getElementById('origin-status');
+  const destinationStatus = document.getElementById('destination-status');
   const btnReverse = document.getElementById('btn-reverse');
   const btnGps = document.getElementById('btn-gps');
   const btnPwd = document.getElementById('btn-pwd-toggle');
@@ -64,65 +65,130 @@
     };
   }
 
+  const suggestionStates = new Map();
+
   async function geocodeSearch(query) {
     if (query.length < 3) return [];
-    try {
-      const params = new URLSearchParams({
-        q: query,
-        format: 'json',
-        addressdetails: '1',
-        limit: '5',
-        countrycodes: 'ph',
-        viewbox: '120.85,14.75,121.15,14.45',
-        bounded: '1',
-      });
-      const response = await fetch(`${NOMINATIM_URL}?${params}`, {
-        headers: { 'Accept-Language': 'en' },
-      });
-      return await response.json();
-    } catch {
-      return [];
-    }
+    return window.SakayGeocoding.search(query);
   }
 
-  function renderSuggestions(results, listEl, input, setCoords) {
-    listEl.innerHTML = '';
+  function setInputStatus(statusEl, message) {
+    statusEl.textContent = message;
+  }
+
+  function clearPlaceSelection(input) {
+    if (input === inputOrigin) originCoords = null;
+    if (input === inputDestination) destinationCoords = null;
+    input.removeAttribute('data-place-id');
+    input.removeAttribute('data-place-label');
+  }
+
+  function closeSuggestions(state) {
+    state.activeIndex = -1;
+    state.results = [];
+    state.listEl.innerHTML = '';
+    state.listEl.classList.remove('active');
+    state.input.setAttribute('aria-expanded', 'false');
+    state.input.removeAttribute('aria-activedescendant');
+  }
+
+  function selectSuggestion(state, index) {
+    const place = state.results[index];
+    if (!place) return;
+    state.input.value = place.label;
+    state.setCoords([place.latitude, place.longitude]);
+    state.input.dataset.placeId = place.placeId;
+    state.input.dataset.placeLabel = place.label;
+    setInputStatus(state.statusEl, `${place.label} selected.`);
+    closeSuggestions(state);
+  }
+
+  function updateActiveSuggestion(state, nextIndex) {
+    const optionCount = state.results.length;
+    if (!optionCount) return;
+    state.activeIndex = (nextIndex + optionCount) % optionCount;
+    [...state.listEl.children].forEach((option, index) => {
+      option.setAttribute('aria-selected', String(index === state.activeIndex));
+    });
+    state.input.setAttribute('aria-activedescendant', `${state.listEl.id}-option-${state.activeIndex}`);
+  }
+
+  function renderSuggestions(state, results) {
+    state.results = results;
+    state.activeIndex = -1;
+    state.listEl.innerHTML = '';
     if (!results.length) {
-      listEl.classList.remove('active');
+      closeSuggestions(state);
+      setInputStatus(state.statusEl, 'No matching locations found. Continue typing or try a nearby landmark.');
       return;
     }
-    results.forEach((item) => {
+
+    results.forEach((place, index) => {
       const li = document.createElement('li');
+      li.id = `${state.listEl.id}-option-${index}`;
       li.setAttribute('role', 'option');
-      li.textContent = item.display_name.split(',').slice(0, 3).join(', ');
-      li.addEventListener('click', () => {
-        input.value = li.textContent;
-        setCoords([parseFloat(item.lat), parseFloat(item.lon)]);
-        listEl.classList.remove('active');
-      });
-      listEl.appendChild(li);
+      li.setAttribute('aria-selected', 'false');
+      li.textContent = place.label;
+      li.addEventListener('mousedown', (event) => event.preventDefault());
+      li.addEventListener('click', () => selectSuggestion(state, index));
+      state.listEl.appendChild(li);
     });
-    listEl.classList.add('active');
+    state.listEl.classList.add('active');
+    state.input.setAttribute('aria-expanded', 'true');
+    setInputStatus(state.statusEl, `${results.length} location suggestions available. Use the arrow keys to review them.`);
   }
 
-  const searchOrigin = debounce(async () => {
-    const results = await geocodeSearch(inputOrigin.value.trim());
-    renderSuggestions(results, originSuggestions, inputOrigin, (c) => { originCoords = c; });
-  }, DEBOUNCE_MS);
+  function initialiseSuggestionInput(input, listEl, statusEl, setCoords, placeType) {
+    const state = { input, listEl, statusEl, setCoords, results: [], activeIndex: -1, requestVersion: 0 };
+    suggestionStates.set(listEl, state);
+    const search = debounce(async (requestVersion) => {
+      const query = input.value.trim();
+      if (query.length < 3) {
+        closeSuggestions(state);
+        setInputStatus(statusEl, `Enter at least three characters to search for a ${placeType}.`);
+        return;
+      }
+      try {
+        const results = await geocodeSearch(query);
+        if (requestVersion !== state.requestVersion) return;
+        renderSuggestions(state, results);
+      } catch (error) {
+        if (requestVersion !== state.requestVersion) return;
+        closeSuggestions(state);
+        setInputStatus(statusEl, error.message || 'Location service is unavailable. Please try again shortly.');
+      }
+    }, DEBOUNCE_MS);
 
-  const searchDestination = debounce(async () => {
-    const results = await geocodeSearch(inputDestination.value.trim());
-    renderSuggestions(results, destinationSuggestions, inputDestination, (c) => { destinationCoords = c; });
-  }, DEBOUNCE_MS);
+    input.addEventListener('input', () => {
+      state.requestVersion += 1;
+      clearPlaceSelection(input);
+      search(state.requestVersion);
+    });
 
-  inputOrigin.addEventListener('input', searchOrigin);
-  inputDestination.addEventListener('input', searchDestination);
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowDown' && state.results.length) {
+        event.preventDefault();
+        updateActiveSuggestion(state, state.activeIndex + 1);
+      } else if (event.key === 'ArrowUp' && state.results.length) {
+        event.preventDefault();
+        updateActiveSuggestion(state, state.activeIndex - 1);
+      } else if (event.key === 'Enter' && state.activeIndex >= 0) {
+        event.preventDefault();
+        selectSuggestion(state, state.activeIndex);
+      } else if (event.key === 'Escape') {
+        closeSuggestions(state);
+        setInputStatus(statusEl, 'Location suggestions dismissed.');
+      }
+    });
+  }
+
+  initialiseSuggestionInput(inputOrigin, originSuggestions, originStatus, (c) => { originCoords = c; }, 'origin');
+  initialiseSuggestionInput(inputDestination, destinationSuggestions, destinationStatus, (c) => { destinationCoords = c; }, 'destination');
 
   // Close suggestions on click outside
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.input-group')) {
-      originSuggestions.classList.remove('active');
-      destinationSuggestions.classList.remove('active');
+      suggestionStates.forEach((state) => closeSuggestions(state));
     }
   });
 
@@ -137,6 +203,19 @@
     const tempCoords = originCoords;
     originCoords = destinationCoords;
     destinationCoords = tempCoords;
+
+    const originPlaceId = inputOrigin.dataset.placeId;
+    const originPlaceLabel = inputOrigin.dataset.placeLabel;
+    inputOrigin.dataset.placeId = inputDestination.dataset.placeId || '';
+    inputOrigin.dataset.placeLabel = inputDestination.dataset.placeLabel || '';
+    inputDestination.dataset.placeId = originPlaceId || '';
+    inputDestination.dataset.placeLabel = originPlaceLabel || '';
+    if (!inputOrigin.dataset.placeId) inputOrigin.removeAttribute('data-place-id');
+    if (!inputOrigin.dataset.placeLabel) inputOrigin.removeAttribute('data-place-label');
+    if (!inputDestination.dataset.placeId) inputDestination.removeAttribute('data-place-id');
+    if (!inputDestination.dataset.placeLabel) inputDestination.removeAttribute('data-place-label');
+    setInputStatus(originStatus, originCoords ? `${inputOrigin.value} selected.` : 'Enter at least three characters to search for an origin.');
+    setInputStatus(destinationStatus, destinationCoords ? `${inputDestination.value} selected.` : 'Enter at least three characters to search for a destination.');
 
     btnReverse.style.transform = 'rotate(180deg)';
     setTimeout(() => { btnReverse.style.transform = ''; }, 300);
@@ -162,8 +241,12 @@
         originCoords = [latitude, longitude];
         inputOrigin.value = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
         btnGps.classList.remove('loading');
-        reverseGeocode(latitude, longitude).then((name) => {
-          if (name) inputOrigin.value = name;
+        reverseGeocode(latitude, longitude).then((place) => {
+          if (!place) return;
+          inputOrigin.value = place.label;
+          inputOrigin.dataset.placeId = place.placeId;
+          inputOrigin.dataset.placeLabel = place.label;
+          setInputStatus(originStatus, `${place.label} selected from your current location.`);
         });
       },
       () => {
@@ -176,12 +259,7 @@
 
   async function reverseGeocode(lat, lng) {
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
-        { headers: { 'Accept-Language': 'en' } }
-      );
-      const data = await response.json();
-      return data.display_name?.split(',').slice(0, 3).join(',').trim() || null;
+      return await window.SakayGeocoding.reverse(lat, lng);
     } catch {
       return null;
     }
@@ -703,6 +781,13 @@
         drawRouteOnMap(route);
       });
 
+      card.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          card.click();
+        }
+      });
+
       resultsPanel.appendChild(card);
     });
 
@@ -899,8 +984,11 @@
       if (!originCoords) {
         const results = await geocodeSearch(originText);
         if (results.length) {
-          originCoords = [parseFloat(results[0].lat), parseFloat(results[0].lon)];
-          inputOrigin.value = results[0].display_name.split(',').slice(0, 3).join(', ');
+          originCoords = [results[0].latitude, results[0].longitude];
+          inputOrigin.value = results[0].label;
+          inputOrigin.dataset.placeId = results[0].placeId;
+          inputOrigin.dataset.placeLabel = results[0].label;
+          setInputStatus(originStatus, `${results[0].label} selected.`);
         } else {
           showToast('Could not find origin location');
           resetButton();
@@ -911,8 +999,11 @@
       if (!destinationCoords) {
         const results = await geocodeSearch(destText);
         if (results.length) {
-          destinationCoords = [parseFloat(results[0].lat), parseFloat(results[0].lon)];
-          inputDestination.value = results[0].display_name.split(',').slice(0, 3).join(', ');
+          destinationCoords = [results[0].latitude, results[0].longitude];
+          inputDestination.value = results[0].label;
+          inputDestination.dataset.placeId = results[0].placeId;
+          inputDestination.dataset.placeLabel = results[0].label;
+          setInputStatus(destinationStatus, `${results[0].label} selected.`);
         } else {
           showToast('Could not find destination');
           resetButton();
