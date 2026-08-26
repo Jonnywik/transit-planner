@@ -1,16 +1,26 @@
-name: Quality checks
+name: Verify pull requests
 
 on:
   pull_request:
+    branches: [main]
   push:
     branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
   verify:
+    name: Tests, coverage, and syntax
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      NODE_OPTIONS: --unhandled-rejections=strict
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -18,7 +28,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Run tests with native coverage
+          check-latest: true
+      - name: Display runtime versions
+        run: node --version && npm --version
+      - name: Run native test coverage
         run: npm run coverage
       - name: Check JavaScript syntax
         run: npm run check

@@ -21,3 +21,10 @@
 - [x] Extract and test critical search-state helpers without relying on the full browser IIFE.
 - [x] Re-run native coverage, record the new baseline, and document residual UI coverage gaps.
 - [x] Commit and push the verified Sprint 3 change set.
+
+## CI and Pull-Request Verification
+
+- [x] Review the current Actions workflow and available repository enforcement settings.
+- [x] Upgrade the workflow to verify pull requests, main-branch pushes, and manual runs with coverage and syntax checks.
+- [x] Document the status check that should be required by branch protection.
+- [x] Validate, commit, and push the CI workflow.
