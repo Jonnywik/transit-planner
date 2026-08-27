@@ -32,7 +32,7 @@ jobs:
       - name: Validate controlled artifacts
         run: npm run validate:pilot && npm run validate:golden && npm run validate:sources
       - name: Generate readiness report
-        run: npm run pilot:readiness && npm run multisource:readiness
+        run: npm run pilot:readiness && npm run multisource:readiness && npm run information-guide:readiness
       - name: Publish safe readiness summary
         run: |
           echo '## Sakay pilot-routing readiness' >> "$GITHUB_STEP_SUMMARY"
@@ -46,4 +46,9 @@ jobs:
           echo '### Multi-source traffic and transit readiness' >> "$GITHUB_STEP_SUMMARY"
           echo '```json' >> "$GITHUB_STEP_SUMMARY"
           cat artifacts/multisource-readiness/status.json >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo '### Information-guide capability state' >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat artifacts/information-guide/status.json >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"

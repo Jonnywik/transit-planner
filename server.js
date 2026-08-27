@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { GatewayError, createGeocodingGateway } from './server/geocoding-gateway.js';
 import { RoutingProviderError, createOtpRoutingProvider } from './server/routing-provider.js';
 import { RoadEtaProviderError, createRoadEtaProvider } from './server/road-eta-provider.js';
+import { createInformationGuideStatus } from './server/information-guide.js';
+import { WalkingEtaProviderError, createWalkingEtaProvider } from './server/walking-eta-provider.js';
 
 const contentTypes = {
   '.css': 'text/css; charset=utf-8',
@@ -41,7 +43,7 @@ async function readJsonBody(request) {
   }
 }
 
-async function handleApi(request, response, url, geocodingGateway, routingProvider, roadEtaProvider) {
+async function handleApi(request, response, url, geocodingGateway, routingProvider, roadEtaProvider, walkingEtaProvider, informationGuide) {
   try {
     if (request.method === 'GET' && url.pathname === '/api/geocode/search') {
       const places = await geocodingGateway.search(url.searchParams.get('q'));
@@ -69,9 +71,23 @@ async function handleApi(request, response, url, geocodingGateway, routingProvid
       return sendJson(response, 200, roadEtaProvider.trafficStatus());
     }
 
+    if (request.method === 'GET' && url.pathname === '/api/capabilities') {
+      return sendJson(response, 200, informationGuide.capabilities());
+    }
+
+    if (request.method === 'POST' && url.pathname === '/api/walking-eta') {
+      const requestBody = await readJsonBody(request);
+      const result = await walkingEtaProvider.estimate(requestBody);
+      return sendJson(response, 200, result);
+    }
+
+    if (request.method === 'GET' && url.pathname === '/api/walking-eta/status') {
+      return sendJson(response, 200, walkingEtaProvider.walkingStatus());
+    }
+
     return sendJson(response, 404, { error: 'Not found.' });
   } catch (error) {
-    const knownError = error instanceof GatewayError || error instanceof RoutingProviderError || error instanceof RoadEtaProviderError;
+    const knownError = error instanceof GatewayError || error instanceof RoutingProviderError || error instanceof RoadEtaProviderError || error instanceof WalkingEtaProviderError;
     const status = knownError ? error.status : 500;
     const message = knownError ? error.message : 'An unexpected service error occurred.';
     return sendJson(response, status, { error: message, code: knownError ? error.code || null : 'INTERNAL_ERROR' });
@@ -121,11 +137,13 @@ export function createSakayServer({
   geocodingGateway = createGeocodingGateway(),
   routingProvider = createOtpRoutingProvider(),
   roadEtaProvider = createRoadEtaProvider(),
+  walkingEtaProvider = createWalkingEtaProvider(),
+  informationGuide = createInformationGuideStatus({ roadEtaProvider, walkingEtaProvider }),
 } = {}) {
   return createServer((request, response) => {
     const url = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
     if (url.pathname.startsWith('/api/')) {
-      handleApi(request, response, url, geocodingGateway, routingProvider, roadEtaProvider);
+      handleApi(request, response, url, geocodingGateway, routingProvider, roadEtaProvider, walkingEtaProvider, informationGuide);
       return;
     }
     serveStatic(request, response, url.pathname, rootDir);

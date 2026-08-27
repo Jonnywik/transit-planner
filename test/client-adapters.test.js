@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { createGeocodingClient } from '../public/geocoding-client.js';
 import { createRoutingClient } from '../public/routing-client.js';
 import { createRoadEtaClient } from '../public/road-eta-client.js';
+import { createWalkingEtaClient } from '../public/walking-eta-client.js';
+import { createCapabilitiesClient } from '../public/capabilities-client.js';
 
 test('geocoding adapter serializes search and reverse requests and returns normalized payload fields', async () => {
   const calls = [];
@@ -66,4 +68,20 @@ test('road ETA adapter remains same-origin and does not invent a road estimate a
   assert.equal((await client.trafficStatus()).availability, 'ROAD_ETA_UNAVAILABLE');
   await assert.rejects(() => client.estimate({ origin: { latitude: 14.6, longitude: 121 }, destination: { latitude: 14.55, longitude: 121.02 } }), /not configured/);
   assert.deepEqual(calls.map((call) => call.url), ['/api/traffic/status', '/api/road-eta']);
+});
+
+test('walking ETA adapter is same-origin and retains an unavailable source state', async () => {
+  const client = createWalkingEtaClient({ fetchImpl: async (url) => url === '/api/walking-eta/status'
+    ? new Response(JSON.stringify({ availability: 'WALKING_ETA_UNAVAILABLE' }), { status: 200 })
+    : new Response(JSON.stringify({ error: 'Walking unavailable', code: 'WALKING_ETA_UNAVAILABLE' }), { status: 503 }) });
+  assert.equal((await client.status()).availability, 'WALKING_ETA_UNAVAILABLE');
+  await assert.rejects(() => client.estimate({}), (error) => error.code === 'WALKING_ETA_UNAVAILABLE');
+});
+
+test('capabilities adapter retrieves a same-origin fallback-mode state', async () => {
+  const client = createCapabilitiesClient({ fetchImpl: async (url) => {
+    assert.equal(url, '/api/capabilities');
+    return new Response(JSON.stringify({ mode: 'INFORMATION_GUIDE', transitRouting: { code: 'NO_GOVERNED_TRANSIT_SCHEDULE' } }), { status: 200 });
+  } });
+  assert.equal((await client.get()).transitRouting.code, 'NO_GOVERNED_TRANSIT_SCHEDULE');
 });

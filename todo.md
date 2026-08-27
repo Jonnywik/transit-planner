@@ -153,3 +153,10 @@
 - [x] Define reproducible ingestion, GTFS/OSM validation, OTP graph build, and secure deployment stages.
 - [x] Define golden-route, pilot-release, observability, rollback, and expansion gates for enabling rider-facing live routing.
 - [x] Document the phased plan, responsibility model, and current go-live blockers.
+
+## Approved No-GTFS Information-Guide Mode
+
+- [x] Add explicit fallback capability states and disclosures that keep live transit routing, schedules, and arrivals unavailable.
+- [x] Add mode-specific road and walking estimate boundaries with no ungrounded duration fallback.
+- [x] Add map-guide status reporting and no-touch capability verification for every estimate/data category.
+- [x] Validate the 390 × 844 fallback experience, commit, and report external provider gates.

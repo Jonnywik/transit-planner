@@ -1,6 +1,8 @@
 import { createGeocodingClient } from './geocoding-client.js';
 import { createRoutingClient } from './routing-client.js';
 import { createRoadEtaClient } from './road-eta-client.js';
+import { createWalkingEtaClient } from './walking-eta-client.js';
+import { createCapabilitiesClient } from './capabilities-client.js';
 import { createSearchRequestState } from './search-state.js';
 import { mergeRecommendationCache, rankRecommendations } from './search-recommendations.js';
 
@@ -19,6 +21,8 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
   const geocodingClient = createGeocodingClient();
   const routingClient = createRoutingClient();
   const roadEtaClient = createRoadEtaClient();
+  const walkingEtaClient = createWalkingEtaClient();
+  const capabilitiesClient = createCapabilitiesClient();
 
   // --- DOM refs ---
   const inputOrigin = document.getElementById('input-origin');
@@ -39,7 +43,9 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
   const departureTimeInput = document.getElementById('departure-time');
   const btnDepartNow = document.getElementById('btn-depart-now');
   const btnRoadEta = document.getElementById('btn-road-eta');
+  const btnWalkingEta = document.getElementById('btn-walking-eta');
   const trafficCapability = document.getElementById('traffic-capability');
+  const guideCapability = document.getElementById('guide-capability');
 
   // --- State ---
   let originCoords = null;
@@ -48,6 +54,7 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
   let passengerType = 'regular';
   let currentRoutes = null;
   let currentRouteSource = null;
+  let informationGuideMode = !DEMO_MODE;
   let routeLayers = [];
 
   function escapeHtml(value) {
@@ -898,6 +905,39 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
     resultsPanel.querySelector('#btn-close-results').addEventListener('click', returnToPlanner);
   }
 
+  function renderWalkingEta(result) {
+    if (result.availability === 'NO_WALKING_ROUTE') {
+      renderAvailabilityState({ title: 'No walking route found.', message: 'Try different locations. Walking routes do not confirm accessibility, sidewalk condition, or safety.', icon: '⌕', source: result.source });
+      return;
+    }
+    const route = result.walkingRoute;
+    showResultsPanel();
+    currentRoutes = null;
+    currentRouteSource = result.source;
+    clearMapLayers();
+    resultsPanel.innerHTML = `
+      <div class="results-header">
+        <div><p class="eyebrow">Walking</p><h2 class="results-header__title">Network walking estimate</h2></div>
+        <button id="btn-close-results" class="results-header__close" title="Edit trip" aria-label="Edit trip">&times;</button>
+      </div>
+      <section class="road-eta-card" aria-label="Walking estimate details">
+        <p class="road-eta-card__eyebrow">Walking route only</p>
+        <p class="road-eta-card__duration">${formatRoadDuration(route.durationSeconds)}</p>
+        <div class="road-eta-card__meta"><span>${formatRoadDistance(route.distanceMeters)}</span></div>
+        <p class="road-eta-card__notice">This estimate does not confirm sidewalk condition, crossing safety, step-free access, or other accessibility details.</p>
+      </section>
+      <section class="results-provenance" aria-label="Walking ETA source details"><h3 class="results-provenance__title">Walking ETA source</h3><dl class="results-provenance__grid"><dt>Provider</dt><dd>${escapeHtml(result.source?.provider || 'Not supplied')}</dd><dt>Retrieved</dt><dd>${escapeHtml(result.source?.retrievedAt || 'Not supplied')}</dd><dt>Scope</dt><dd>${escapeHtml(result.source?.scope || 'Network walking estimate only')}</dd></dl></section>`;
+    resultsPanel.querySelector('#btn-close-results').addEventListener('click', returnToPlanner);
+  }
+
+  function renderTransitUnavailable() {
+    renderAvailabilityState({
+      title: 'Transit schedules are unavailable.',
+      message: 'Sakay can show map information and mode-specific road or walking estimates. It cannot currently show transit routes, next-train times, or vehicle arrivals.',
+      icon: '!',
+    });
+  }
+
   function renderResults(routes, source = currentRouteSource) {
     showResultsPanel();
     currentRouteSource = source;
@@ -1164,6 +1204,10 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
   // SEARCH
   // =====================
   async function performSearch() {
+    if (informationGuideMode && !DEMO_MODE) {
+      renderTransitUnavailable();
+      return;
+    }
     const originText = inputOrigin.value.trim();
     const destText = inputDestination.value.trim();
 
@@ -1255,7 +1299,28 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
       renderAvailabilityState({ title: 'Traffic-aware road ETA unavailable.', message: error.message || 'Road travel time is not available. Transit schedules are not substituted.', icon: '!' });
     } finally {
       btnRoadEta.classList.remove('searching');
-      btnRoadEta.textContent = 'Road ETA';
+      btnRoadEta.textContent = 'Drive ETA';
+    }
+  }
+
+  async function performWalkingEta() {
+    if (!originCoords || !destinationCoords) {
+      showToast('Select an origin and destination first');
+      return;
+    }
+    btnWalkingEta.classList.add('searching');
+    btnWalkingEta.textContent = 'Checking…';
+    try {
+      const result = await walkingEtaClient.estimate({
+        origin: { latitude: originCoords[0], longitude: originCoords[1] },
+        destination: { latitude: destinationCoords[0], longitude: destinationCoords[1] },
+      });
+      renderWalkingEta(result);
+    } catch (error) {
+      renderAvailabilityState({ title: 'Walking ETA unavailable.', message: error.message || 'Walking travel time is not available. Sakay does not estimate it from straight-line distance.', icon: '!' });
+    } finally {
+      btnWalkingEta.classList.remove('searching');
+      btnWalkingEta.textContent = 'Walk ETA';
     }
   }
 
@@ -1269,6 +1334,7 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
     performSearch();
   });
   btnRoadEta.addEventListener('click', performRoadEta);
+  btnWalkingEta.addEventListener('click', performWalkingEta);
 
   roadEtaClient.trafficStatus().then((status) => {
     const configured = status.trafficLayer === 'AVAILABLE';
@@ -1277,6 +1343,20 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
     trafficCapability.title = configured ? 'Current traffic conditions can be shown on the approved map renderer.' : 'A configured Google Maps renderer is required. This map does not infer road closures.';
   }).catch(() => {
     trafficCapability.textContent = 'Traffic conditions unavailable';
+  });
+
+  capabilitiesClient.get().then((capabilities) => {
+    const transitAvailable = capabilities.transitRouting?.availability === 'AVAILABLE';
+    informationGuideMode = !transitAvailable && !DEMO_MODE;
+    guideCapability.textContent = transitAvailable ? 'Transit schedules available' : 'Transit schedules unavailable · estimates only';
+    guideCapability.classList.toggle('guide-capability--available', transitAvailable);
+    if (informationGuideMode) {
+      btnSearch.querySelector('span').textContent = 'Transit unavailable';
+      btnSearch.title = 'Current governed transit schedules are not connected';
+    }
+  }).catch(() => {
+    informationGuideMode = !DEMO_MODE;
+    guideCapability.textContent = 'Transit schedule status unavailable · estimates only';
   });
 
   // =====================

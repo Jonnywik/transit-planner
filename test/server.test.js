@@ -33,6 +33,9 @@ function providers({ routeError } = {}) {
       async estimate(request) { return { availability: 'ROAD_ETA_READY', roadRoute: { durationSeconds: 480 }, source: { request } }; },
       trafficStatus() { return { availability: 'ROAD_ETA_UNAVAILABLE', trafficLayer: 'MAP_RENDERER_NOT_CONFIGURED' }; },
     },
+    informationGuide: {
+      capabilities() { return { mode: 'INFORMATION_GUIDE', transitRouting: { code: 'NO_GOVERNED_TRANSIT_SCHEDULE' } }; },
+    },
   };
 }
 
@@ -90,6 +93,14 @@ test('keeps road ETA and traffic status in a separate same-origin API contract',
     });
     assert.equal(estimate.status, 200);
     assert.equal((await estimate.json()).availability, 'ROAD_ETA_READY');
+  });
+});
+
+test('provides explicit information-guide capability states without treating map context as transit routing', async () => {
+  await withServer(providers(), async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/capabilities`);
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { mode: 'INFORMATION_GUIDE', transitRouting: { code: 'NO_GOVERNED_TRANSIT_SCHEDULE' } });
   });
 });
 
