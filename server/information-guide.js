@@ -1,5 +1,5 @@
 /* Transit Operations Calm: fallback mode declares unavailable Sakay transit routing honestly while offering only a user-initiated external transit handoff. */
-export function createInformationGuideStatus({ roadEtaProvider, walkingEtaProvider, now = () => new Date().toISOString() } = {}) {
+export function createInformationGuideStatus({ roadEtaProvider, walkingEtaProvider, roadInterruptionProvider, now = () => new Date().toISOString() } = {}) {
   function capabilities() {
     return {
       mode: 'INFORMATION_GUIDE',
@@ -17,6 +17,11 @@ export function createInformationGuideStatus({ roadEtaProvider, walkingEtaProvid
       },
       roadEta: roadEtaProvider?.trafficStatus?.() || { availability: 'ROAD_ETA_UNAVAILABLE' },
       walkingEta: walkingEtaProvider?.walkingStatus?.() || { availability: 'WALKING_ETA_UNAVAILABLE' },
+      roadInterruptions: roadInterruptionProvider?.status?.() || {
+        availability: 'VERIFIED_INTERRUPTION_UNAVAILABLE',
+        code: 'NO_APPROVED_ROAD_INTERRUPTION_SOURCE',
+        message: 'No current approved authority road-interruption source is connected. Sakay cannot claim road closures.',
+      },
       mapContext: {
         availability: 'ADVISORY_ONLY',
         message: 'Map context does not confirm closures, interruptions, accessibility, or transit operations.',

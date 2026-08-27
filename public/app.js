@@ -4,6 +4,8 @@ import { createRoadEtaClient } from './road-eta-client.js';
 import { createWalkingEtaClient } from './walking-eta-client.js';
 import { createCapabilitiesClient } from './capabilities-client.js';
 import { createGoogleTransitDirectionsUrl } from './google-transit-handoff.js';
+import { createGoogleTrafficMapUrl } from './google-traffic-handoff.js';
+import { getMrt3ScheduledHeadwayReference } from './mrt3-schedule-reference.js';
 import { createSearchRequestState } from './search-state.js';
 import { mergeRecommendationCache, rankRecommendations } from './search-recommendations.js';
 
@@ -46,6 +48,9 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
   const btnRoadEta = document.getElementById('btn-road-eta');
   const btnWalkingEta = document.getElementById('btn-walking-eta');
   const trafficCapability = document.getElementById('traffic-capability');
+  const btnTrafficHandoff = document.getElementById('btn-traffic-handoff');
+  const btnMrt3Reference = document.getElementById('btn-mrt3-reference');
+  const btnFareReference = document.getElementById('btn-fare-reference');
   const guideCapability = document.getElementById('guide-capability');
 
   // --- State ---
@@ -958,6 +963,42 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
     if (handoff && handoffUrl) handoff.href = handoffUrl;
   }
 
+  function renderMrt3ScheduleReference() {
+    const reference = getMrt3ScheduledHeadwayReference(departureTimeInput.value);
+    showResultsPanel();
+    currentRoutes = null;
+    currentRouteSource = null;
+    clearMapLayers();
+    const referenceDetail = reference.availability === 'SCHEDULED_HEADWAY_REFERENCE'
+      ? `<p class="reference-card__value">${escapeHtml(reference.publishedHeadway)}</p><p class="reference-card__detail">${escapeHtml(reference.serviceDay)} · ${escapeHtml(reference.period)} · published system window ${escapeHtml(reference.publishedWindow)}</p>`
+      : `<p class="reference-card__value">Outside published service window</p><p class="reference-card__detail">${escapeHtml(reference.serviceDay)} timetable reference</p>`;
+    resultsPanel.innerHTML = `
+      <div class="results-header"><div><p class="eyebrow">MRT-3</p><h2 class="results-header__title">Scheduled service reference</h2></div><button id="btn-close-results" class="results-header__close" title="Edit trip" aria-label="Edit trip">&times;</button></div>
+      <section class="reference-card" aria-label="MRT-3 scheduled service reference">
+        <p class="reference-card__eyebrow">${escapeHtml(reference.sourceLabel)}</p>
+        ${referenceDetail}
+        <p class="reference-card__notice">${escapeHtml(reference.limitation)}</p>
+        <a class="reference-card__link" href="${escapeHtml(reference.sourceUrl)}" target="_blank" rel="noopener noreferrer">View official MRT-3 schedule</a>
+      </section>`;
+    resultsPanel.querySelector('#btn-close-results').addEventListener('click', returnToPlanner);
+  }
+
+  function renderFareReference() {
+    showResultsPanel();
+    currentRoutes = null;
+    currentRouteSource = null;
+    clearMapLayers();
+    resultsPanel.innerHTML = `
+      <div class="results-header"><div><p class="eyebrow">Fare reference</p><h2 class="results-header__title">User-supplied PUV fare notice</h2></div><button id="btn-close-results" class="results-header__close" title="Edit trip" aria-label="Edit trip">&times;</button></div>
+      <section class="reference-card" aria-label="Dated public utility vehicle fare notice">
+        <p class="reference-card__eyebrow">Historical reference · not a calculation</p>
+        <img class="fare-notice" src="/assets/ltfrb-puv-fare-notice-user-supplied.png" alt="User-supplied LTFRB fare notice showing PUJ, UV Express, and public bus fare figures with 2018, 2021, and 2023 effective dates.">
+        <p class="reference-card__notice">This notice has different stated effective dates and does not cover rail fares. Fares vary by exact route, vehicle class, passenger category, posted matrix, and any later agency action.</p>
+        <a class="reference-card__link" href="https://www.foi.gov.ph/agencies/ltfrb/how-fare-matrix-is-made/" target="_blank" rel="noopener noreferrer">Read LTFRB fare-matrix context</a>
+      </section>`;
+    resultsPanel.querySelector('#btn-close-results').addEventListener('click', returnToPlanner);
+  }
+
   function renderResults(routes, source = currentRouteSource) {
     showResultsPanel();
     currentRouteSource = source;
@@ -1355,14 +1396,17 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
   });
   btnRoadEta.addEventListener('click', performRoadEta);
   btnWalkingEta.addEventListener('click', performWalkingEta);
+  btnMrt3Reference.addEventListener('click', renderMrt3ScheduleReference);
+  btnFareReference.addEventListener('click', renderFareReference);
+  btnTrafficHandoff.href = createGoogleTrafficMapUrl({ latitude: METRO_MANILA_CENTER[0], longitude: METRO_MANILA_CENTER[1] });
 
   roadEtaClient.trafficStatus().then((status) => {
     const configured = status.trafficLayer === 'AVAILABLE';
-    trafficCapability.textContent = configured ? 'Current traffic conditions available' : 'Traffic map layer unavailable';
-    trafficCapability.classList.toggle('traffic-capability--available', configured);
-    trafficCapability.title = configured ? 'Current traffic conditions can be shown on the approved map renderer.' : 'A configured Google Maps renderer is required. This map does not infer road closures.';
+    trafficCapability.textContent = configured ? 'Current traffic conditions available' : 'External traffic view available · closures not verified';
+    trafficCapability.classList.toggle('traffic-capability--available', true);
+    trafficCapability.title = configured ? 'Current traffic conditions can be shown on the approved map renderer.' : 'This opens Google Maps traffic externally. Sakay does not infer road closures.';
   }).catch(() => {
-    trafficCapability.textContent = 'Traffic conditions unavailable';
+    trafficCapability.textContent = 'External traffic view available · closures not verified';
   });
 
   capabilitiesClient.get().then((capabilities) => {

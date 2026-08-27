@@ -7,12 +7,14 @@ import { RoutingProviderError, createOtpRoutingProvider } from './server/routing
 import { RoadEtaProviderError, createRoadEtaProvider } from './server/road-eta-provider.js';
 import { createInformationGuideStatus } from './server/information-guide.js';
 import { WalkingEtaProviderError, createWalkingEtaProvider } from './server/walking-eta-provider.js';
+import { createRoadInterruptionProvider } from './server/road-interruption-provider.js';
 
 const contentTypes = {
   '.css': 'text/css; charset=utf-8',
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  '.png': 'image/png',
   '.svg': 'image/svg+xml',
 };
 
@@ -43,7 +45,7 @@ async function readJsonBody(request) {
   }
 }
 
-async function handleApi(request, response, url, geocodingGateway, routingProvider, roadEtaProvider, walkingEtaProvider, informationGuide) {
+async function handleApi(request, response, url, geocodingGateway, routingProvider, roadEtaProvider, walkingEtaProvider, roadInterruptionProvider, informationGuide) {
   try {
     if (request.method === 'GET' && url.pathname === '/api/geocode/search') {
       const places = await geocodingGateway.search(url.searchParams.get('q'));
@@ -83,6 +85,10 @@ async function handleApi(request, response, url, geocodingGateway, routingProvid
 
     if (request.method === 'GET' && url.pathname === '/api/walking-eta/status') {
       return sendJson(response, 200, walkingEtaProvider.walkingStatus());
+    }
+
+    if (request.method === 'GET' && url.pathname === '/api/road-interruptions/status') {
+      return sendJson(response, 200, roadInterruptionProvider.status());
     }
 
     return sendJson(response, 404, { error: 'Not found.' });
@@ -138,12 +144,13 @@ export function createSakayServer({
   routingProvider = createOtpRoutingProvider(),
   roadEtaProvider = createRoadEtaProvider(),
   walkingEtaProvider = createWalkingEtaProvider(),
-  informationGuide = createInformationGuideStatus({ roadEtaProvider, walkingEtaProvider }),
+  roadInterruptionProvider = createRoadInterruptionProvider(),
+  informationGuide = createInformationGuideStatus({ roadEtaProvider, walkingEtaProvider, roadInterruptionProvider }),
 } = {}) {
   return createServer((request, response) => {
     const url = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
     if (url.pathname.startsWith('/api/')) {
-      handleApi(request, response, url, geocodingGateway, routingProvider, roadEtaProvider, walkingEtaProvider, informationGuide);
+      handleApi(request, response, url, geocodingGateway, routingProvider, roadEtaProvider, walkingEtaProvider, roadInterruptionProvider, informationGuide);
       return;
     }
     serveStatic(request, response, url.pathname, rootDir);

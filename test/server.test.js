@@ -33,6 +33,9 @@ function providers({ routeError } = {}) {
       async estimate(request) { return { availability: 'ROAD_ETA_READY', roadRoute: { durationSeconds: 480 }, source: { request } }; },
       trafficStatus() { return { availability: 'ROAD_ETA_UNAVAILABLE', trafficLayer: 'MAP_RENDERER_NOT_CONFIGURED' }; },
     },
+    roadInterruptionProvider: {
+      status() { return { availability: 'VERIFIED_INTERRUPTION_UNAVAILABLE', code: 'NO_APPROVED_ROAD_INTERRUPTION_SOURCE' }; },
+    },
     informationGuide: {
       capabilities() { return { mode: 'INFORMATION_GUIDE', transitRouting: { code: 'NO_GOVERNED_TRANSIT_SCHEDULE' } }; },
     },
@@ -49,6 +52,9 @@ test('serves only public assets with browser hardening headers', async () => {
     assert.equal(home.headers.get('x-frame-options'), 'DENY');
     const missing = await fetch(`${baseUrl}/does-not-exist`);
     assert.equal(missing.status, 404);
+    const fareNotice = await fetch(`${baseUrl}/assets/ltfrb-puv-fare-notice-user-supplied.png`);
+    assert.equal(fareNotice.status, 200);
+    assert.equal(fareNotice.headers.get('content-type'), 'image/png');
     for (const privatePath of ['/.git/config', '/.env', '/package.json', '/test/server.test.js', '/docs/CI_VERIFICATION.md', '/server.js']) {
       const privateResponse = await fetch(`${baseUrl}${privatePath}`);
       assert.equal(privateResponse.status, 404, `${privatePath} must not be publicly served`);
@@ -93,6 +99,9 @@ test('keeps road ETA and traffic status in a separate same-origin API contract',
     });
     assert.equal(estimate.status, 200);
     assert.equal((await estimate.json()).availability, 'ROAD_ETA_READY');
+    const interruptions = await fetch(`${baseUrl}/api/road-interruptions/status`);
+    assert.equal(interruptions.status, 200);
+    assert.equal((await interruptions.json()).code, 'NO_APPROVED_ROAD_INTERRUPTION_SOURCE');
   });
 });
 

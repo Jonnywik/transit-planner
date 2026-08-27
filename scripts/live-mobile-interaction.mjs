@@ -106,9 +106,12 @@ try {
     const roadEta = document.getElementById('btn-road-eta').getBoundingClientRect();
     const walkingEta = document.getElementById('btn-walking-eta').getBoundingClientRect();
     const departure = document.getElementById('departure-time').getBoundingClientRect();
-    return { viewportWidth: window.innerWidth, viewportHeight: window.innerHeight, docked: getComputedStyle(sheet).bottom === '0px', handle: Boolean(document.querySelector('.sheet-handle')), gpsReachable: gps.height >= 34, searchReachable: search.height >= 40, roadEtaReachable: roadEta.height >= 40, walkingEtaReachable: walkingEta.height >= 40, departureReachable: departure.height >= 40, departureValue: document.getElementById('departure-time').value };
+    const mrt3Reference = document.getElementById('btn-mrt3-reference').getBoundingClientRect();
+    const fareReference = document.getElementById('btn-fare-reference').getBoundingClientRect();
+    const trafficHandoff = document.getElementById('btn-traffic-handoff');
+    return { viewportWidth: window.innerWidth, viewportHeight: window.innerHeight, docked: getComputedStyle(sheet).bottom === '0px', handle: Boolean(document.querySelector('.sheet-handle')), gpsReachable: gps.height >= 34, searchReachable: search.height >= 40, roadEtaReachable: roadEta.height >= 40, walkingEtaReachable: walkingEta.height >= 40, departureReachable: departure.height >= 40, mrt3ReferenceReachable: mrt3Reference.height >= 30, fareReferenceReachable: fareReference.height >= 30, trafficHandoff: { href: trafficHandoff.href, target: trafficHandoff.target, rel: trafficHandoff.rel }, departureValue: document.getElementById('departure-time').value };
   })()`);
-  if (initialShell.viewportWidth !== 390 || initialShell.viewportHeight !== 844 || !initialShell.docked || !initialShell.handle || !initialShell.gpsReachable || !initialShell.searchReachable || !initialShell.roadEtaReachable || !initialShell.walkingEtaReachable || !initialShell.departureReachable || !initialShell.departureValue) throw new Error(`The mobile bottom-sheet shell or primary touch targets failed their live check: ${JSON.stringify(initialShell)}`);
+  if (initialShell.viewportWidth !== 390 || initialShell.viewportHeight !== 844 || !initialShell.docked || !initialShell.handle || !initialShell.gpsReachable || !initialShell.searchReachable || !initialShell.roadEtaReachable || !initialShell.walkingEtaReachable || !initialShell.departureReachable || !initialShell.mrt3ReferenceReachable || !initialShell.fareReferenceReachable || !initialShell.trafficHandoff.href.includes('www.google.com/maps/@') || !initialShell.trafficHandoff.href.includes('layer=traffic') || initialShell.trafficHandoff.target !== '_blank' || !initialShell.trafficHandoff.rel.includes('noopener') || !initialShell.departureValue) throw new Error(`The mobile bottom-sheet shell, reference controls, traffic handoff, or primary touch targets failed their live check: ${JSON.stringify(initialShell)}`);
 
   await client.send('Browser.grantPermissions', { origin: baseUrl, permissions: ['geolocation'] });
   await client.send('Emulation.setGeolocationOverride', { latitude: 14.6424, longitude: 121.0387, accuracy: 10 }, sessionId);
@@ -159,6 +162,26 @@ try {
   await delay(700);
   await enterAndSelect('input-origin', 'Quezon Avenue', 'origin-suggestions');
   await enterAndSelect('input-destination', 'Ayala', 'destination-suggestions');
+  await evaluate(client, sessionId, `(() => { const input = document.getElementById('departure-time'); input.value = '2026-08-24T08:00'; input.dispatchEvent(new Event('change', { bubbles: true })); document.getElementById('btn-mrt3-reference').click(); })()`);
+  await delay(200);
+  const mrt3Reference = await evaluate(client, sessionId, `(() => {
+    const panel = document.getElementById('results-panel');
+    const officialLink = panel.querySelector('.reference-card__link');
+    const state = { visible: !panel.hidden, text: panel.textContent, officialLink: officialLink ? { href: officialLink.href, target: officialLink.target, rel: officialLink.rel } : null };
+    document.getElementById('btn-close-results').click();
+    return { ...state, plannerRecovered: !document.getElementById('search-panel').hidden };
+  })()`);
+  if (!mrt3Reference.visible || !mrt3Reference.text.includes('Scheduled service reference') || !mrt3Reference.text.includes('3.5 min') || !mrt3Reference.text.includes('not a station arrival') || !mrt3Reference.officialLink?.href.includes('dotrmrt3.gov.ph') || mrt3Reference.officialLink.target !== '_blank' || !mrt3Reference.officialLink.rel.includes('noopener') || !mrt3Reference.plannerRecovered) throw new Error(`The MRT-3 scheduled reference was not clearly labeled, source-linked, or recoverable: ${JSON.stringify(mrt3Reference)}`);
+  await evaluate(client, sessionId, `document.getElementById('btn-fare-reference').click()`);
+  await delay(200);
+  const fareReference = await evaluate(client, sessionId, `(() => {
+    const panel = document.getElementById('results-panel');
+    const image = panel.querySelector('.fare-notice');
+    const state = { visible: !panel.hidden, text: panel.textContent, image: image ? { src: image.src, alt: image.alt } : null };
+    document.getElementById('btn-close-results').click();
+    return { ...state, plannerRecovered: !document.getElementById('search-panel').hidden };
+  })()`);
+  if (!fareReference.visible || !fareReference.text.includes('not a calculation') || !fareReference.text.includes('does not cover rail fares') || !fareReference.image?.src.includes('ltfrb-puv-fare-notice-user-supplied.png') || !fareReference.image.alt.includes('effective dates') || !fareReference.plannerRecovered) throw new Error(`The dated PUV fare reference was not clearly labeled, rendered, or recoverable: ${JSON.stringify(fareReference)}`);
   await evaluate(client, sessionId, `document.getElementById('btn-walking-eta').click()`);
   await delay(500);
   const walkingEtaUnavailable = await evaluate(client, sessionId, `(() => {

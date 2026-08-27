@@ -173,3 +173,11 @@
 - [x] Evaluate controlled non-GTFS alternatives that preserve utility without claiming a verified transit route, schedule, or arrival.
 - [x] Define replacement capability states, provenance labels, validation criteria, and safe failure behavior.
 - [x] Implement and validate approved non-GTFS replacements without removing existing functionality.
+
+## Requested Arrival, Fare, Traffic, and Interruption Enhancements
+
+- [x] Verify the supplied fare notice’s source authority, effective date, scope, and applicability before using it for rider fare guidance.
+- [x] Evaluate whether a current, authoritative Metro Manila train operations or realtime source supports safe arrival estimates; preserve unavailable state if it does not.
+- [x] Evaluate a policy-compliant live traffic rendering path and retain the distinction between congestion visualization and verified road closures.
+- [x] Identify an authoritative, current road-interruption source and implement it only with verifiable provenance, timestamps, and safe stale/error behavior.
+- [x] Implement and validate every approved capability without converting estimates, historical figures, or map context into false live claims.

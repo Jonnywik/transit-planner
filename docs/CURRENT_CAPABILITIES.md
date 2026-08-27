@@ -16,10 +16,12 @@ Sakay is currently a **mobile-first information guide and transit-planning found
 | Current location | **Available where browser permission is granted** | Use device location to populate an origin search. | Location permission remains controlled by the rider’s browser. |
 | Information Guide mode | **Available** | See an explicit notice that transit schedules are unavailable and access separate estimate tools. | This is not a live transit-planning service. |
 | Transit route search | **External handoff available; Sakay routing unavailable** | Open selected locations in Google Maps with transit mode requested, or receive a clear explanation when locations are not selected. | Sakay does not import, verify, cache, or display the provider’s itinerary/time; a governed GTFS source, OTP graph, golden-route report, and eligible release state are still required for Sakay routing. |
+| MRT-3 scheduled service reference | **Available as scheduled reference** | Check the applicable published weekday/Saturday/Sunday headway period for the selected local time. | It is not a next-train time, station arrival, vehicle location, delay, or live prediction. |
+| User-supplied PUV fare notice | **Available as dated reference** | Inspect the supplied PUJ, UV Express, and public-bus fare notice. | It does not calculate a current fare, does not cover rail fares, and must be checked against the posted matrix and later agency actions. |
 | Demo route interactions | **Demo-only** | Explore sample route cards, route selection, map focus, and reverse-trip behavior at `?demo=1`. | Fixtures are conspicuously labeled and must not be used for travel decisions. |
 | Traffic-aware driving estimate | **Configuration-gated** | Request a traffic-aware driving time, distance, and traffic-speed detail when the protected Google Routes service is configured. | It is driving-only—not a bus, jeepney, train, or total transit journey estimate. |
 | Network walking estimate | **Configuration-gated** | Request a walking network time and distance when its protected provider is enabled. | It is not a guarantee about crossings, sidewalks, safety, step-free access, or accessibility. |
-| Traffic map layer | **Unavailable** | See the reason that a live traffic layer is not active on the current map. | The current Leaflet map does not render unsupported Google traffic tiles or scrape traffic data. |
+| Traffic map layer | **External handoff available** | Open Google Maps’ traffic view in a separate tab/app from Sakay’s control. | Sakay does not render, cache, or interpret Google traffic content on the Leaflet map; traffic visibility does not confirm a road closure. |
 | Road/interruption context | **Advisory-only** | View base map context. | OSM or map context does not confirm a closure, incident, open road, or safe passage. |
 
 ## Transit, source, and data capabilities
@@ -31,8 +33,8 @@ Sakay is currently a **mobile-first information guide and transit-planning found
 | SakayPH bus/jeepney GTFS | **Historical staging-only** | Isolated structure inspection and source classification. | Currentness and rights evidence from the responsible source owner. |
 | Mobility Database records | **Discovery/reference-only** | Registry classification and shared-lineage detection with historical feed records. | Direct current operator feed; catalog metadata is not accepted as source authority. |
 | OpenStreetMap routing inputs | **Staging-only** | Governed source registry, checksum/coverage requirements, and advisory map semantics. | Approved extract, attribution review, coverage boundary, and graph release evidence. |
-| Train arrival prediction | **Unavailable** | Strict static-schedule versus realtime eligibility model. | Fresh approved operational feed, matching static identifiers, and agreed freshness policy. |
-| Verified road interruption | **Unavailable** | Mapped-baseline, advisory, and verified-active eligibility model. | Current time-bounded authority feed and approved source profile. |
+| Train arrival prediction | **Unavailable** | Published MRT-3 headways are separated into a non-live schedule reference; the realtime eligibility model remains strict. | Fresh approved operational feed, matching static identifiers, and agreed freshness policy. |
+| Verified road interruption | **Provider-ready but unavailable** | A same-origin status endpoint reports unavailable/pending evidence without creating closure events. | Current time-bounded authority feed, direct provider connection, approved source profile, rights evidence, event timestamps, and freshness policy. |
 | Fares | **Unavailable** | `fareStatus` provenance disclosure. | Approved fare source, versioning, and product policy. |
 | Accessibility claims | **Unavailable** | Demo-only isolation for any sample accessibility presentation. | Verified, maintained accessibility inventory and a rider-facing limitation policy. |
 

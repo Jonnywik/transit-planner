@@ -33,6 +33,7 @@
         </svg>
         <span>Nearby lines</span>
       </button>
+      <a id="btn-traffic-handoff" class="traffic-handoff" target="_blank" rel="noopener noreferrer">Live traffic in Google Maps</a>
       <div id="traffic-capability" class="traffic-capability" role="status" aria-live="polite">Traffic layer checking…</div>
       <div id="guide-capability" class="guide-capability" role="status" aria-live="polite">Checking transit schedule availability…</div>
 
@@ -113,11 +114,15 @@
         <div class="journey-time">
           <div>
             <label for="departure-time" class="journey-time__label">Leaving at</label>
-            <p class="journey-time__hint">Schedules are checked for this local date and time.</p>
+            <p class="journey-time__hint">This local time is used for approved providers. MRT-3 timing is a scheduled reference only.</p>
           </div>
           <div class="journey-time__control">
             <input type="datetime-local" id="departure-time" class="journey-time__input" aria-describedby="departure-time-help" required>
             <button type="button" id="btn-depart-now" class="journey-time__now">Now</button>
+          </div>
+          <div class="journey-time__references" aria-label="Transit references">
+            <button type="button" id="btn-mrt3-reference" class="journey-time__reference">MRT-3 schedule reference</button>
+            <button type="button" id="btn-fare-reference" class="journey-time__reference">PUV fare notice</button>
           </div>
           <span id="departure-time-help" class="sr-only">Choose the local date and time you plan to leave.</span>
         </div>

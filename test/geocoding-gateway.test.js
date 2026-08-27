@@ -50,6 +50,7 @@ test('refuses upstream requests when an operator identifier is not configured', 
       calls += 1;
       return new Response('[]');
     },
+    userAgent: '',
     minUpstreamIntervalMs: 0,
   });
 
