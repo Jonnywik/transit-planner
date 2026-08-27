@@ -146,3 +146,10 @@
 - [x] Add protected Google Routes road-ETA contracts, feature gates, and traffic availability states without exposing credentials.
 - [x] Add mobile source/availability disclosures and no-touch verification for road traffic, schedules, real-time, and interruption data.
 - [x] Run full validation, commit, and report the delivered source controls and external integration gates.
+
+## Live Transit Routing Implementation Plan
+
+- [x] Confirm the source-owner, data-rights, pilot-boundary, and operational-accountability prerequisites for live service.
+- [x] Define reproducible ingestion, GTFS/OSM validation, OTP graph build, and secure deployment stages.
+- [x] Define golden-route, pilot-release, observability, rollback, and expansion gates for enabling rider-facing live routing.
+- [x] Document the phased plan, responsibility model, and current go-live blockers.
