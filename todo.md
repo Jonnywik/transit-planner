@@ -111,3 +111,10 @@
 - [x] Test blocked, expired, mismatched, and eligible release states; validate and report the remaining external authorization gates.
 
 > The no-touch automation is complete and safely blocked by the absence of authorized source and deployment evidence. It will continue to deny live routing until those machine-verifiable gates are satisfied.
+
+## GTFS Source Evaluation
+
+- [x] Define the authoritative-source, licensing, freshness, and pilot-scope criteria for GTFS candidates.
+- [x] Research official, agency-adjacent, and reference-only Metro Manila GTFS candidates using primary sources.
+- [x] Compare candidates against Sakay’s source-governance gate and make a conditional recommendation.
+- [x] Document the findings and identify the exact evidence needed before any candidate can enter the automated release policy.
