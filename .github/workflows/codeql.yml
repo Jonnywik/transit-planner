@@ -20,17 +20,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      # v4.2.2 — immutable SHA verified on 2026-08-27
+      # v5 — immutable SHA verified on 2026-08-27
       - name: Check out source
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      # v3.28.17 — immutable SHA verified on 2026-08-27
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      # v4 — immutable SHA verified on 2026-08-27
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@6f5948dfacef28e207b48d0905cf90c03365536d
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938
         with:
           languages: javascript-typescript
           build-mode: none
-      # v3.28.17 — immutable SHA verified on 2026-08-27
+      # v4 — immutable SHA verified on 2026-08-27
       - name: Analyze
-        uses: github/codeql-action/analyze@6f5948dfacef28e207b48d0905cf90c03365536d
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938
         with:
           category: /language:javascript-typescript
