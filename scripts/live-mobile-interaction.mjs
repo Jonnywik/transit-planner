@@ -104,10 +104,11 @@ try {
     const gps = document.getElementById('btn-gps').getBoundingClientRect();
     const search = document.getElementById('btn-search').getBoundingClientRect();
     const roadEta = document.getElementById('btn-road-eta').getBoundingClientRect();
+    const walkingEta = document.getElementById('btn-walking-eta').getBoundingClientRect();
     const departure = document.getElementById('departure-time').getBoundingClientRect();
-    return { viewportWidth: window.innerWidth, viewportHeight: window.innerHeight, docked: getComputedStyle(sheet).bottom === '0px', handle: Boolean(document.querySelector('.sheet-handle')), gpsReachable: gps.height >= 34, searchReachable: search.height >= 40, roadEtaReachable: roadEta.height >= 40, departureReachable: departure.height >= 40, departureValue: document.getElementById('departure-time').value };
+    return { viewportWidth: window.innerWidth, viewportHeight: window.innerHeight, docked: getComputedStyle(sheet).bottom === '0px', handle: Boolean(document.querySelector('.sheet-handle')), gpsReachable: gps.height >= 34, searchReachable: search.height >= 40, roadEtaReachable: roadEta.height >= 40, walkingEtaReachable: walkingEta.height >= 40, departureReachable: departure.height >= 40, departureValue: document.getElementById('departure-time').value };
   })()`);
-  if (initialShell.viewportWidth !== 390 || initialShell.viewportHeight !== 844 || !initialShell.docked || !initialShell.handle || !initialShell.gpsReachable || !initialShell.searchReachable || !initialShell.roadEtaReachable || !initialShell.departureReachable || !initialShell.departureValue) throw new Error(`The mobile bottom-sheet shell or primary touch targets failed their live check: ${JSON.stringify(initialShell)}`);
+  if (initialShell.viewportWidth !== 390 || initialShell.viewportHeight !== 844 || !initialShell.docked || !initialShell.handle || !initialShell.gpsReachable || !initialShell.searchReachable || !initialShell.roadEtaReachable || !initialShell.walkingEtaReachable || !initialShell.departureReachable || !initialShell.departureValue) throw new Error(`The mobile bottom-sheet shell or primary touch targets failed their live check: ${JSON.stringify(initialShell)}`);
 
   await client.send('Browser.grantPermissions', { origin: baseUrl, permissions: ['geolocation'] });
   await client.send('Emulation.setGeolocationOverride', { latitude: 14.6424, longitude: 121.0387, accuracy: 10 }, sessionId);
@@ -158,6 +159,15 @@ try {
   await delay(700);
   await enterAndSelect('input-origin', 'Quezon Avenue', 'origin-suggestions');
   await enterAndSelect('input-destination', 'Ayala', 'destination-suggestions');
+  await evaluate(client, sessionId, `document.getElementById('btn-walking-eta').click()`);
+  await delay(500);
+  const walkingEtaUnavailable = await evaluate(client, sessionId, `(() => {
+    const panel = document.getElementById('results-panel');
+    const state = { visible: !panel.hidden, text: panel.textContent };
+    document.getElementById('btn-adjust-trip')?.click();
+    return { ...state, plannerRecovered: !document.getElementById('search-panel').hidden };
+  })()`);
+  if (!walkingEtaUnavailable.visible || !walkingEtaUnavailable.text.includes('Walking ETA unavailable.') || !walkingEtaUnavailable.plannerRecovered) throw new Error(`The unconfigured walking-ETA path did not remain distinct and recoverable: ${JSON.stringify(walkingEtaUnavailable)}`);
   await evaluate(client, sessionId, `document.getElementById('btn-road-eta').click()`);
   await delay(500);
   const roadEtaUnavailable = await evaluate(client, sessionId, `(() => {
@@ -180,7 +190,7 @@ try {
     return { ...state, recoveryAvailable: Boolean(recovery), plannerRecovered: !document.getElementById('search-panel').hidden };
   })()`);
   const textOverlaps = unavailableState.paragraphs.some((paragraph, index) => index > 0 && paragraph.top < unavailableState.paragraphs[index - 1].bottom + 6);
-  if (!unavailableState.visible || !unavailableState.plannerHidden || !unavailableState.text.includes('Routing service unavailable.') || !unavailableState.recoveryAvailable || !unavailableState.plannerRecovered || textOverlaps) throw new Error(`The unavailable-routing sheet did not render clearly or recover to the planner. Paragraph layout: ${JSON.stringify(unavailableState.paragraphs)}`);
+  if (!unavailableState.visible || !unavailableState.plannerHidden || !unavailableState.text.includes('Transit schedules are unavailable.') || !unavailableState.recoveryAvailable || !unavailableState.plannerRecovered || textOverlaps) throw new Error(`The no-GTFS transit-unavailable sheet did not render clearly or recover to the planner. Paragraph layout: ${JSON.stringify(unavailableState.paragraphs)}`);
 
   const screenshotPath = resolve(outputDir, 'mobile-route-result.png');
   await client.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false }, sessionId).then(async ({ data }) => {
@@ -190,7 +200,7 @@ try {
   const screenshot = await stat(screenshotPath);
   if (screenshot.size < 5_000) throw new Error('The live mobile interaction screenshot is unexpectedly small.');
 
-  console.log(`Live mobile interaction smoke passed: bottom sheet, departure time, GPS selection, real geocoding selections, demo disclosure, route selection, map focus, distinct road-ETA recovery, reverse trip, and truthful unavailable-routing recovery. Artifact: ${screenshotPath} (${screenshot.size} bytes)`);
+  console.log(`Live mobile interaction smoke passed: bottom sheet, departure time, GPS selection, real geocoding selections, demo disclosure, route selection, map focus, distinct walking/driving estimate recovery, reverse trip, and truthful no-GTFS transit recovery. Artifact: ${screenshotPath} (${screenshot.size} bytes)`);
 } finally {
   client?.close();
   chrome.kill('SIGTERM');
