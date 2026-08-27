@@ -118,3 +118,9 @@
 - [x] Research official, agency-adjacent, and reference-only Metro Manila GTFS candidates using primary sources.
 - [x] Compare candidates against Sakay’s source-governance gate and make a conditional recommendation.
 - [x] Document the findings and identify the exact evidence needed before any candidate can enter the automated release policy.
+
+## Governed GTFS Activation Checklist
+
+- [x] Translate the approved-source requirements into a concise owner-facing sequence.
+- [x] Describe the automated validation, readiness, graph, and assurance handoffs without enabling live routing.
+- [x] Deliver the step-by-step guide and the safe blocked-state fallback.
