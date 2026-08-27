@@ -189,6 +189,24 @@ try {
     return { ...state, plannerRecovered: !document.getElementById('search-panel').hidden };
   })()`);
   if (!mrt3BeforeService.visible || !mrt3BeforeService.text.includes('Before published service window') || !mrt3BeforeService.text.includes('04:30–23:40') || !mrt3BeforeService.text.includes('cannot confirm a first train or station arrival') || !mrt3BeforeService.plannerRecovered) throw new Error(`The before-service MRT-3 guidance was not clearly labeled or recoverable: ${JSON.stringify(mrt3BeforeService)}`);
+  await evaluate(client, sessionId, `(() => { const input = document.getElementById('departure-time'); input.value = '2026-08-24T08:00'; input.dispatchEvent(new Event('change', { bubbles: true })); document.getElementById('btn-mrt3-station-reference').click(); const origin = document.getElementById('mrt3-origin-station'); const destination = document.getElementById('mrt3-destination-station'); origin.value = 'North Avenue'; destination.value = 'Ayala'; document.getElementById('mrt3-station-form').requestSubmit(); })()`);
+  await delay(200);
+  const mrt3StationReference = await evaluate(client, sessionId, `(() => {
+    const panel = document.getElementById('results-panel');
+    const matrixLink = panel.querySelector('.reference-card__link--external');
+    const state = { visible: !panel.hidden, text: panel.textContent, matrixLink: matrixLink ? { href: matrixLink.href, target: matrixLink.target, rel: matrixLink.rel, height: matrixLink.getBoundingClientRect().height } : null };
+    return state;
+  })()`);
+  if (!mrt3StationReference.visible || !mrt3StationReference.text.includes('North Avenue to Ayala') || !mrt3StationReference.text.includes('Toward Taft Avenue') || !mrt3StationReference.text.includes('10 station hops') || !mrt3StationReference.text.includes('₱24.00') || !mrt3StationReference.text.includes('Static station reference') || !mrt3StationReference.text.includes('Confirm the posted fare at the station') || !mrt3StationReference.matrixLink?.href.includes('fare-matrix.pdf') || mrt3StationReference.matrixLink.target !== '_blank' || !mrt3StationReference.matrixLink.rel.includes('noopener') || mrt3StationReference.matrixLink.height < 44) throw new Error(`The MRT-3 station route and fare lookup did not render a source-linked static reference: ${JSON.stringify(mrt3StationReference)}`);
+  const stationReferenceScreenshotPath = resolve(outputDir, 'mobile-mrt3-station-route-fare.png');
+  await client.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false }, sessionId).then(async ({ data }) => {
+    await (await import('node:fs/promises')).writeFile(stationReferenceScreenshotPath, Buffer.from(data, 'base64'));
+  });
+  await access(stationReferenceScreenshotPath, constants.R_OK);
+  if ((await stat(stationReferenceScreenshotPath)).size < 5_000) throw new Error('The MRT-3 station-reference screenshot is unexpectedly small.');
+  const stationEditor = await evaluate(client, sessionId, `(() => { document.getElementById('btn-edit-mrt3-station-reference').click(); return { visible: !document.getElementById('results-panel').hidden, origin: document.getElementById('mrt3-origin-station').value, destination: document.getElementById('mrt3-destination-station').value }; })()`);
+  if (!stationEditor.visible || stationEditor.origin !== 'North Avenue' || stationEditor.destination !== 'Ayala') throw new Error(`The MRT-3 station-reference editor did not preserve selections: ${JSON.stringify(stationEditor)}`);
+  await evaluate(client, sessionId, `document.getElementById('btn-close-results').click()`);
   await evaluate(client, sessionId, `document.getElementById('btn-fare-reference').click()`);
   await delay(200);
   const fareReference = await evaluate(client, sessionId, `(() => {
@@ -250,7 +268,7 @@ try {
   const screenshot = await stat(screenshotPath);
   if (screenshot.size < 5_000) throw new Error('The live mobile interaction screenshot is unexpectedly small.');
 
-  console.log(`Live mobile interaction smoke passed: bottom sheet, departure time, GPS selection, real geocoding selections, demo disclosure, route selection, map focus, distinct walking/driving estimate recovery, reverse trip, and truthful external transit handoff. Artifacts: ${scheduleScreenshotPath}, ${walkingFallbackScreenshotPath}, ${screenshotPath} (${screenshot.size} bytes)`);
+  console.log(`Live mobile interaction smoke passed: bottom sheet, departure time, GPS selection, real geocoding selections, demo disclosure, route selection, map focus, MRT-3 station route and fare lookup, distinct walking/driving estimate recovery, reverse trip, and truthful external transit handoff. Artifacts: ${scheduleScreenshotPath}, ${stationReferenceScreenshotPath}, ${walkingFallbackScreenshotPath}, ${screenshotPath} (${screenshot.size} bytes)`);
 } finally {
   client?.close();
   chrome.kill('SIGTERM');

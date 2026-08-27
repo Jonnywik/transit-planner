@@ -7,6 +7,7 @@ import { createGoogleTransitDirectionsUrl } from './google-transit-handoff.js';
 import { createGoogleDirectionsUrl } from './google-directions-handoff.js';
 import { createGoogleTrafficMapUrl } from './google-traffic-handoff.js';
 import { getMrt3ScheduledHeadwayReference } from './mrt3-schedule-reference.js';
+import { MRT3_STATIONS, createMrt3StationReference } from './mrt3-station-reference.js';
 import { createSearchRequestState } from './search-state.js';
 import { mergeRecommendationCache, rankRecommendations } from './search-recommendations.js';
 
@@ -51,6 +52,7 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
   const trafficCapability = document.getElementById('traffic-capability');
   const btnTrafficHandoff = document.getElementById('btn-traffic-handoff');
   const btnMrt3Reference = document.getElementById('btn-mrt3-reference');
+  const btnMrt3StationReference = document.getElementById('btn-mrt3-station-reference');
   const btnFareReference = document.getElementById('btn-fare-reference');
   const guideCapability = document.getElementById('guide-capability');
 
@@ -1016,6 +1018,75 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
     resultsPanel.querySelector('#btn-close-results').addEventListener('click', returnToPlanner);
   }
 
+  function stationOptions(selected = '') {
+    return ['<option value="">Choose a station</option>', ...MRT3_STATIONS.map((station) => `<option value="${escapeHtml(station)}"${station === selected ? ' selected' : ''}>${escapeHtml(station)}</option>`)].join('');
+  }
+
+  function renderMrt3StationPlanner(values = {}) {
+    showResultsPanel();
+    currentRoutes = null;
+    currentRouteSource = null;
+    clearMapLayers();
+    resultsPanel.innerHTML = `
+      <div class="results-header"><div><p class="eyebrow">MRT-3 reference</p><h2 class="results-header__title">Station route &amp; fare</h2></div><button id="btn-close-results" class="results-header__close" title="Edit trip" aria-label="Edit trip">&times;</button></div>
+      <section class="reference-card reference-card--station" aria-label="MRT-3 station reference planner">
+        <p class="reference-card__eyebrow">Published 13-station line · static reference</p>
+        <p class="reference-card__detail">Choose two MRT-3 stations to view the published station order, selected-time service reference, and official matrix amount.</p>
+        <form id="mrt3-station-form" class="station-reference-form">
+          <label class="station-reference-form__label" for="mrt3-origin-station">Boarding station</label>
+          <select id="mrt3-origin-station" class="station-reference-form__select" required>${stationOptions(values.originStation)}</select>
+          <label class="station-reference-form__label" for="mrt3-destination-station">Exit station</label>
+          <select id="mrt3-destination-station" class="station-reference-form__select" required>${stationOptions(values.destinationStation)}</select>
+          <label class="station-reference-form__label" for="mrt3-fare-category">Matrix category</label>
+          <select id="mrt3-fare-category" class="station-reference-form__select"><option value="regular"${values.fareCategory !== 'concessionary' ? ' selected' : ''}>Regular matrix</option><option value="concessionary"${values.fareCategory === 'concessionary' ? ' selected' : ''}>Student, senior citizen, or PWD matrix</option></select>
+          <p id="mrt3-station-status" class="station-reference-form__status" role="status" aria-live="polite"></p>
+          <button class="reference-card__link reference-card__link--external" type="submit">Show MRT-3 reference <span aria-hidden="true">→</span></button>
+        </form>
+        <p class="reference-card__notice">This is not a location-to-station router, live timetable, arrival prediction, or current-fare guarantee. Confirm the posted fare at the station.</p>
+      </section>`;
+    resultsPanel.querySelector('#btn-close-results').addEventListener('click', returnToPlanner);
+    resultsPanel.querySelector('#mrt3-station-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const formValues = {
+        originStation: form.querySelector('#mrt3-origin-station').value,
+        destinationStation: form.querySelector('#mrt3-destination-station').value,
+        fareCategory: form.querySelector('#mrt3-fare-category').value,
+      };
+      try {
+        renderMrt3StationResult(createMrt3StationReference({ ...formValues, departureTime: departureTimeInput.value }));
+      } catch (error) {
+        form.querySelector('#mrt3-station-status').textContent = error.message;
+      }
+    });
+  }
+
+  function renderMrt3StationResult(reference) {
+    const serviceDetail = reference.service.availability === 'SCHEDULED_HEADWAY_REFERENCE'
+      ? `${reference.service.period}: published ${reference.service.publishedHeadway} headway (${reference.service.publishedWindow})`
+      : `${reference.service.serviceDay} published system window: ${reference.service.serviceWindow}`;
+    showResultsPanel();
+    resultsPanel.innerHTML = `
+      <div class="results-header"><div><p class="eyebrow">MRT-3 reference</p><h2 class="results-header__title">${escapeHtml(reference.originStation)} to ${escapeHtml(reference.destinationStation)}</h2></div><button id="btn-close-results" class="results-header__close" title="Edit trip" aria-label="Edit trip">&times;</button></div>
+      <section class="reference-card reference-card--station" aria-label="MRT-3 station route and fare reference">
+        <span class="reference-card__status">Static station reference · not live</span>
+        <p class="reference-card__value">${escapeHtml(reference.direction)}</p>
+        <p class="reference-card__detail">${reference.stationHops} station hop${reference.stationHops === 1 ? '' : 's'} · ${reference.intermediateStations.length ? `via ${escapeHtml(reference.intermediateStations.join(' → '))}` : 'directly adjacent stations'}</p>
+        <div class="station-reference-fare"><span>Official matrix reference</span><strong>₱${reference.fare.amount.toFixed(2)}</strong><small>${escapeHtml(reference.fare.categoryLabel)}</small></div>
+        <p class="reference-card__detail">${escapeHtml(serviceDetail)}</p>
+        <p class="reference-card__notice">${escapeHtml(reference.service.guidance)} ${escapeHtml(reference.service.limitation)}</p>
+        <p class="reference-card__notice">${escapeHtml(reference.fare.limitation)}</p>
+        <a class="reference-card__link reference-card__link--external" href="${escapeHtml(reference.fare.sourceUrl)}" target="_blank" rel="noopener noreferrer">View ${escapeHtml(reference.fare.sourceLabel)} <span aria-hidden="true">↗</span></a>
+        <button id="btn-edit-mrt3-station-reference" class="results-empty__action results-empty__action--secondary" type="button">Edit MRT-3 stations</button>
+      </section>`;
+    resultsPanel.querySelector('#btn-close-results').addEventListener('click', returnToPlanner);
+    resultsPanel.querySelector('#btn-edit-mrt3-station-reference').addEventListener('click', () => renderMrt3StationPlanner({
+      originStation: reference.originStation,
+      destinationStation: reference.destinationStation,
+      fareCategory: reference.fare.category,
+    }));
+  }
+
   function renderFareReference() {
     showResultsPanel();
     currentRoutes = null;
@@ -1430,6 +1501,7 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
   btnRoadEta.addEventListener('click', performRoadEta);
   btnWalkingEta.addEventListener('click', performWalkingEta);
   btnMrt3Reference.addEventListener('click', renderMrt3ScheduleReference);
+  btnMrt3StationReference.addEventListener('click', () => renderMrt3StationPlanner({ fareCategory: ['student', 'senior', 'pwd'].includes(passengerType) ? 'concessionary' : 'regular' }));
   btnFareReference.addEventListener('click', renderFareReference);
   btnTrafficHandoff.href = createGoogleTrafficMapUrl({ latitude: METRO_MANILA_CENTER[0], longitude: METRO_MANILA_CENTER[1] });
 

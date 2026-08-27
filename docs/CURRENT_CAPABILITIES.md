@@ -17,6 +17,7 @@ Sakay is currently a **mobile-first information guide and transit-planning found
 | Information Guide mode | **Available** | See an explicit notice that transit schedules are unavailable and access separate estimate tools. | This is not a live transit-planning service. |
 | Transit route search | **External handoff available; Sakay routing unavailable** | Open selected locations in Google Maps with transit mode requested, or receive a clear explanation when locations are not selected. | Sakay does not import, verify, cache, or display the provider’s itinerary/time; a governed GTFS source, OTP graph, golden-route report, and eligible release state are still required for Sakay routing. |
 | MRT-3 scheduled service reference | **Available as scheduled reference** | Check the applicable published weekday/Saturday/Sunday headway period for the selected local time, with clear before-service, in-service, and after-service guidance. | It is not a next-train time, station arrival, vehicle location, delay, or live prediction. |
+| MRT-3 station route and fare lookup | **Available as static official reference** | Select two published MRT-3 stations to view direction, intermediate stations, station hops, selected-time service reference, and the regular or concessionary official-matrix amount. | It is not a location-to-station router, transfer planner, current-fare guarantee, fare-eligibility check, or live service/arrival claim. |
 | User-supplied PUV fare notice | **Available as dated reference** | Inspect the supplied PUJ, UV Express, and public-bus fare notice. | It does not calculate a current fare, does not cover rail fares, and must be checked against the posted matrix and later agency actions. |
 | Demo route interactions | **Demo-only** | Explore sample route cards, route selection, map focus, and reverse-trip behavior at `?demo=1`. | Fixtures are conspicuously labeled and must not be used for travel decisions. |
 | Traffic-aware driving estimate | **Configuration-gated** | Request a traffic-aware driving time, distance, and traffic-speed detail when the protected Google Routes service is configured. | It is driving-only—not a bus, jeepney, train, or total transit journey estimate. |
@@ -37,7 +38,7 @@ Sakay is currently a **mobile-first information guide and transit-planning found
 | OpenStreetMap routing inputs | **Staging-only** | Governed source registry, checksum/coverage requirements, and advisory map semantics. | Approved extract, attribution review, coverage boundary, and graph release evidence. |
 | Train arrival prediction | **Unavailable** | Published MRT-3 headways are separated into a non-live schedule reference; the realtime eligibility model remains strict. | Fresh approved operational feed, matching static identifiers, and agreed freshness policy. |
 | Verified road interruption | **Provider-ready but unavailable** | A same-origin status endpoint reports unavailable/pending evidence without creating closure events. | Current time-bounded authority feed, direct provider connection, approved source profile, rights evidence, event timestamps, and freshness policy. |
-| Fares | **Unavailable** | `fareStatus` provenance disclosure. | Approved fare source, versioning, and product policy. |
+| Multimodal and location-based fares | **Unavailable** | The MRT-3 station-pair matrix lookup is isolated as a static official reference; `fareStatus` remains available for governed sources. | Current route/vehicle-specific fare sources, effective dates, transfer rules, passenger eligibility, versioning, and product policy. |
 | Accessibility claims | **Unavailable** | Demo-only isolation for any sample accessibility presentation. | Verified, maintained accessibility inventory and a rider-facing limitation policy. |
 
 ## Platform, security, and reliability capabilities
@@ -70,3 +71,4 @@ This separation allows the user interface and operational controls to mature now
 | No-touch pilot release gate | `docs/NO_TOUCH_PILOT_AUTOMATION.md` |
 | Multi-source and road-traffic safeguards | `docs/MULTISOURCE_TRAFFIC_IMPLEMENTATION.md` |
 | No-GTFS information-guide behavior | `docs/NO_GTFS_INFORMATION_GUIDE.md` |
+| MRT-3 station route and fare lookup | `docs/MRT3_STATION_REFERENCE_ROUTER.md` |

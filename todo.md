@@ -202,3 +202,10 @@
 - [x] Produce a full production-readiness test summary for all current feature classes and release gates.
 - [x] Optimize mobile MRT-3 schedule guidance and external fallback-link components for hierarchy, touch targets, and disclosure clarity.
 - [x] Complete responsive validation, commit, and report readiness plus the next external dependency.
+
+## Side-Project Router and Fare Calculation
+
+- [x] Inventory existing route and fare capabilities, including demo fixtures and dated source material, to identify safe production scope.
+- [x] Verify current authoritative rules that can support a side-project fare calculator and define explicit unsupported-journey behavior.
+- [x] Implement source-labeled route and fare calculations only where input eligibility can be demonstrated; preserve external handoff elsewhere.
+- [x] Validate, commit, and document supported journey classes, effective dates, and remaining data gaps.

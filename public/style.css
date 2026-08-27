@@ -172,6 +172,15 @@ button:focus-visible, input:focus-visible, select:focus-visible, [role="button"]
 .reference-card__link { color: var(--blue); font-size: 11px; font-weight: 800; }
 .reference-card__link--external { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 0 12px; color: #fff; background: var(--blue); border: 1px solid var(--blue); border-radius: 10px; box-shadow: 0 7px 14px rgba(18,63,115,.16); text-decoration: none; }
 .reference-card__link--external:hover { background: var(--blue-deep); }
+.reference-card--station { border-top-color: var(--red); }
+.station-reference-form { display: grid; gap: 7px; margin-top: 2px; }
+.station-reference-form__label { color: var(--ink); font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: .05em; text-transform: uppercase; }
+.station-reference-form__select { width: 100%; min-height: 44px; padding: 0 10px; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 9px; font: inherit; font-size: 13px; }
+.station-reference-form__select:focus-visible { outline: 3px solid rgba(18,63,115,.22); outline-offset: 1px; border-color: var(--blue); }
+.station-reference-form__status { min-height: 16px; margin: 0; color: #a02f37; font-size: 11px; line-height: 1.35; }
+.station-reference-fare { display: grid; gap: 1px; padding: 11px 12px; color: var(--ink); background: #eef4fa; border: 1px solid #d7e3ef; border-radius: 10px; }
+.station-reference-fare span, .station-reference-fare small { color: var(--muted); font-family: var(--font-mono); font-size: 10px; line-height: 1.35; }
+.station-reference-fare strong { color: var(--blue-deep); font-size: 25px; letter-spacing: -.045em; }
 .fare-notice { width: 100%; max-height: 360px; object-fit: contain; object-position: top; background: #fff; border: 1px solid var(--line); border-radius: 10px; }
 .route-card { position: relative; margin: 0 0 9px; padding: 15px; overflow: hidden; background: var(--paper-strong); border: 1px solid var(--line); border-radius: 16px; cursor: pointer; transition: border-color 180ms var(--ease-out), transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out); }
 .route-card::before { position: absolute; top: 0; bottom: 0; left: 0; width: 4px; content: ''; background: var(--blue); opacity: .15; }
