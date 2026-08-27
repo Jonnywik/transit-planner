@@ -16,6 +16,8 @@ test('normalizes provider results into the client place contract', () => {
   assert.deepEqual(normalizePlace({ osm_type: 'node', osm_id: 123, display_name: 'Ayala, Makati, Metro Manila, Philippines', lat: '14.5547', lon: '121.0244' }), {
     placeId: 'node-123',
     label: 'Ayala, Makati, Metro Manila',
+    primaryLabel: 'Ayala',
+    secondaryLabel: 'Makati, Metro Manila',
     latitude: 14.5547,
     longitude: 121.0244,
   });

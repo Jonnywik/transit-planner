@@ -31,9 +31,13 @@ export function normalizePlace(place) {
   const longitude = Number(place.lon);
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || !place.display_name) return null;
 
+  const labelParts = String(place.display_name).split(',').map((part) => part.trim()).filter(Boolean);
+
   return {
     placeId: `${place.osm_type || 'place'}-${place.osm_id || `${latitude},${longitude}`}`,
-    label: String(place.display_name).split(',').slice(0, 3).map((part) => part.trim()).filter(Boolean).join(', '),
+    label: labelParts.slice(0, 3).join(', '),
+    primaryLabel: labelParts[0],
+    secondaryLabel: labelParts.slice(1, 3).join(', '),
     latitude,
     longitude,
   };

@@ -89,3 +89,10 @@
 - [x] Validate the pilot implementation without enabling unapproved live routing, then commit and report pending data approvals.
 
 > Sprint 1 implementation is complete. The static journey-planning pilot remains **not live** until the data-rights, source-validity, reproducible-graph, golden-route, and operational approval gates documented in `docs/PILOT_DATA_GOVERNANCE.md` are completed.
+
+## Real-Time Location Recommendation Upgrade
+
+- [x] Assess current autocomplete latency, provider configuration, and no-result/error paths without weakening provider safeguards.
+- [x] Add responsive query-state feedback, address-result prioritization, and accessible real-time recommendation controls.
+- [x] Extend client/gateway coverage and 390 × 844 live interaction checks for live recommendations.
+- [x] Validate the secure same-origin search flow, commit, and report any external-provider limitations.

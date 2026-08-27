@@ -124,10 +124,10 @@ try {
     let ready = { count: 0, status: '' };
     for (let attempt = 0; attempt < 50; attempt += 1) {
       await delay(200);
-      ready = await evaluate(client, sessionId, `(() => ({ count: document.querySelectorAll('#${listId} li').length, status: document.getElementById(${JSON.stringify(inputId === 'input-origin' ? 'origin-status' : 'destination-status')}).textContent }))()`);
-      if (ready.count > 0) break;
+      ready = await evaluate(client, sessionId, `(() => ({ count: document.querySelectorAll('#${listId} li').length, hasPrimary: Boolean(document.querySelector('#${listId} .suggestion__primary')), hasSecondary: Boolean(document.querySelector('#${listId} .suggestion__secondary')), busy: document.getElementById(${JSON.stringify(inputId)}).getAttribute('aria-busy'), status: document.getElementById(${JSON.stringify(inputId === 'input-origin' ? 'origin-status' : 'destination-status')}).textContent }))()`);
+      if (ready.count > 0 && ready.hasPrimary && ready.hasSecondary && ready.busy === 'false') break;
     }
-    if (ready.count < 1) throw new Error(`Expected at least one real suggestion for ${inputId}; received ${ready.count}. Status: ${ready.status}.`);
+    if (ready.count < 1 || !ready.hasPrimary || !ready.hasSecondary || ready.busy !== 'false') throw new Error(`Expected a completed, rich live recommendation for ${inputId}; received ${JSON.stringify(ready)}.`);
     await evaluate(client, sessionId, `document.querySelector('#${listId} li').click()`);
   };
 

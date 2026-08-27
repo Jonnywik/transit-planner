@@ -1,6 +1,7 @@
 import { createGeocodingClient } from './geocoding-client.js';
 import { createRoutingClient } from './routing-client.js';
 import { createSearchRequestState } from './search-state.js';
+import { mergeRecommendationCache, rankRecommendations } from './search-recommendations.js';
 
 /* Signal Ribbon — mobile-first map canvas + thumb-reachable planning sheet.
    This interaction layer preserves explicit place state, controlled geocoding,
@@ -120,9 +121,9 @@ import { createSearchRequestState } from './search-state.js';
 
   const suggestionStates = new Map();
 
-  async function geocodeSearch(query) {
+  async function geocodeSearch(query, signal) {
     if (query.length < 3) return [];
-    return geocodingClient.search(query);
+    return geocodingClient.search(query, signal);
   }
 
   function setInputStatus(statusEl, message) {
@@ -142,6 +143,7 @@ import { createSearchRequestState } from './search-state.js';
     state.listEl.innerHTML = '';
     state.listEl.classList.remove('active');
     state.input.setAttribute('aria-expanded', 'false');
+    state.input.setAttribute('aria-busy', 'false');
     state.input.removeAttribute('aria-activedescendant');
   }
 
@@ -167,7 +169,7 @@ import { createSearchRequestState } from './search-state.js';
     state.input.setAttribute('aria-activedescendant', `${state.listEl.id}-option-${state.activeIndex}`);
   }
 
-  function renderSuggestions(state, results) {
+  function renderSuggestions(state, results, { statusMessage } = {}) {
     state.results = results;
     state.activeIndex = -1;
     state.listEl.innerHTML = '';
@@ -182,41 +184,71 @@ import { createSearchRequestState } from './search-state.js';
       li.id = `${state.listEl.id}-option-${index}`;
       li.setAttribute('role', 'option');
       li.setAttribute('aria-selected', 'false');
-      li.textContent = place.label;
+      li.setAttribute('aria-label', place.label);
+      const primary = document.createElement('span');
+      primary.className = 'suggestion__primary';
+      primary.textContent = place.primaryLabel || place.label;
+      li.appendChild(primary);
+      if (place.secondaryLabel) {
+        const secondary = document.createElement('span');
+        secondary.className = 'suggestion__secondary';
+        secondary.textContent = place.secondaryLabel;
+        li.appendChild(secondary);
+      }
       li.addEventListener('mousedown', (event) => event.preventDefault());
       li.addEventListener('click', () => selectSuggestion(state, index));
       state.listEl.appendChild(li);
     });
     state.listEl.classList.add('active');
     state.input.setAttribute('aria-expanded', 'true');
-    setInputStatus(state.statusEl, `${results.length} location suggestions available. Use the arrow keys to review them.`);
+    setInputStatus(state.statusEl, statusMessage || `${results.length} live location suggestions available. Use the arrow keys to review them.`);
   }
 
   function initialiseSuggestionInput(input, listEl, statusEl, setCoords, placeType) {
-    const state = { input, listEl, statusEl, setCoords, results: [], activeIndex: -1, searchState: createSearchRequestState() };
+    const state = { input, listEl, statusEl, setCoords, results: [], cachedPlaces: [], activeIndex: -1, abortController: null, searchState: createSearchRequestState() };
     suggestionStates.set(listEl, state);
-    const search = debounce(async (requestVersion) => {
-      const query = input.value.trim();
+    const search = debounce(async (requestVersion, query, controller) => {
       if (query.length < 3) {
         closeSuggestions(state);
         setInputStatus(statusEl, `Enter at least three characters to search for a ${placeType}.`);
         return;
       }
       try {
-        const results = await geocodeSearch(query);
-        if (!state.searchState.isCurrent(requestVersion)) return;
-        renderSuggestions(state, results);
+        const results = await geocodeSearch(query, controller.signal);
+        if (!state.searchState.isCurrent(requestVersion) || controller.signal.aborted) return;
+        state.cachedPlaces = mergeRecommendationCache(state.cachedPlaces, results);
+        renderSuggestions(state, rankRecommendations(state.cachedPlaces, query), { statusMessage: `${results.length} live location suggestions available. Use the arrow keys to review them.` });
       } catch (error) {
-        if (!state.searchState.isCurrent(requestVersion)) return;
+        if (!state.searchState.isCurrent(requestVersion) || error?.name === 'AbortError') return;
         closeSuggestions(state);
         setInputStatus(statusEl, error.message || 'Location service is unavailable. Please try again shortly.');
+      } finally {
+        if (state.searchState.isCurrent(requestVersion)) input.setAttribute('aria-busy', 'false');
       }
     }, DEBOUNCE_MS);
 
     input.addEventListener('input', () => {
       const requestVersion = state.searchState.beginInput();
       clearPlaceSelection(input);
-      search(requestVersion);
+      state.abortController?.abort();
+      const query = input.value.trim();
+      if (query.length < 3) {
+        closeSuggestions(state);
+        setInputStatus(statusEl, `Enter at least three characters to search for a ${placeType}.`);
+        return;
+      }
+
+      const cachedMatches = rankRecommendations(state.cachedPlaces, query);
+      if (cachedMatches.length) {
+        renderSuggestions(state, cachedMatches, { statusMessage: `Showing ${cachedMatches.length} recent matches while checking live addresses.` });
+      } else {
+        closeSuggestions(state);
+        setInputStatus(statusEl, `Looking for live ${placeType} matches…`);
+      }
+      const controller = new AbortController();
+      state.abortController = controller;
+      input.setAttribute('aria-busy', 'true');
+      search(requestVersion, query, controller);
     });
 
     input.addEventListener('keydown', (event) => {

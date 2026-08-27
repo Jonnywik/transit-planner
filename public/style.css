@@ -84,8 +84,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, [role="button"]
 .input-group__status { min-height: 0; margin: 4px 0 0 40px; color: var(--muted); font-size: 10px; line-height: 1.35; }
 .suggestions { position: absolute; top: calc(100% - 17px); right: 0; left: 40px; z-index: 1000; display: none; max-height: 180px; padding: 5px; margin: 0; overflow: auto; list-style: none; background: var(--paper-strong); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-float); }
 .suggestions.active { display: block; animation: fade-slide .18s var(--ease-out); }
-.suggestions li { padding: 10px; color: var(--ink); border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; }
+.suggestions li { display: grid; gap: 2px; padding: 10px; color: var(--ink); border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; }
+.suggestion__primary { color: var(--ink); font-size: 12px; font-weight: 800; line-height: 1.25; }
+.suggestion__secondary { color: var(--muted); font-family: var(--font-mono); font-size: 9px; font-weight: 400; line-height: 1.35; }
 .suggestions li:hover, .suggestions li[aria-selected="true"] { color: var(--blue); background: #eaf0f6; }
+.suggestions li:hover .suggestion__primary, .suggestions li[aria-selected="true"] .suggestion__primary { color: var(--blue); }
 .route-form__footer { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 10px; }
 .journey-time { display: grid; grid-template-columns: 1fr; gap: 6px; padding: 10px 12px; color: var(--ink); background: rgba(18,63,115,.055); border: 1px solid rgba(18,63,115,.12); border-radius: 14px; }
 .journey-time__label { display: block; color: var(--blue); font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: .05em; text-transform: uppercase; }
