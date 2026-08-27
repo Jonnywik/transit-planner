@@ -172,6 +172,15 @@ try {
     return { ...state, plannerRecovered: !document.getElementById('search-panel').hidden };
   })()`);
   if (!mrt3Reference.visible || !mrt3Reference.text.includes('Scheduled service reference') || !mrt3Reference.text.includes('3.5 min') || !mrt3Reference.text.includes('not a station arrival') || !mrt3Reference.officialLink?.href.includes('dotrmrt3.gov.ph') || mrt3Reference.officialLink.target !== '_blank' || !mrt3Reference.officialLink.rel.includes('noopener') || !mrt3Reference.plannerRecovered) throw new Error(`The MRT-3 scheduled reference was not clearly labeled, source-linked, or recoverable: ${JSON.stringify(mrt3Reference)}`);
+  await evaluate(client, sessionId, `(() => { const input = document.getElementById('departure-time'); input.value = '2026-08-24T02:00'; input.dispatchEvent(new Event('change', { bubbles: true })); document.getElementById('btn-mrt3-reference').click(); })()`);
+  await delay(200);
+  const mrt3BeforeService = await evaluate(client, sessionId, `(() => {
+    const panel = document.getElementById('results-panel');
+    const state = { visible: !panel.hidden, text: panel.textContent };
+    document.getElementById('btn-close-results').click();
+    return { ...state, plannerRecovered: !document.getElementById('search-panel').hidden };
+  })()`);
+  if (!mrt3BeforeService.visible || !mrt3BeforeService.text.includes('Before published service window') || !mrt3BeforeService.text.includes('04:30–23:40') || !mrt3BeforeService.text.includes('cannot confirm a first train or station arrival') || !mrt3BeforeService.plannerRecovered) throw new Error(`The before-service MRT-3 guidance was not clearly labeled or recoverable: ${JSON.stringify(mrt3BeforeService)}`);
   await evaluate(client, sessionId, `document.getElementById('btn-fare-reference').click()`);
   await delay(200);
   const fareReference = await evaluate(client, sessionId, `(() => {

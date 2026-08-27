@@ -34,16 +34,31 @@ export function getMrt3ScheduledHeadwayReference(value) {
   const periods = day === 0 ? SUNDAY_PERIODS : day === 6 ? SATURDAY_PERIODS : WEEKDAY_PERIODS;
   const minuteOfDay = date.getHours() * 60 + date.getMinutes();
   const period = periods.find((candidate) => minuteOfDay >= timeToMinutes(candidate.start) && minuteOfDay <= timeToMinutes(candidate.end));
+  const firstPeriod = periods[0];
+  const lastPeriod = periods.at(-1);
+  const firstMinute = timeToMinutes(firstPeriod.start);
+  const lastMinute = timeToMinutes(lastPeriod.end);
+  const availability = period
+    ? 'SCHEDULED_HEADWAY_REFERENCE'
+    : minuteOfDay < firstMinute ? 'BEFORE_PUBLISHED_SERVICE_WINDOW' : 'AFTER_PUBLISHED_SERVICE_WINDOW';
+  const serviceWindow = `${firstPeriod.start}–${lastPeriod.end}`;
+  const guidance = period
+    ? `This selected time falls in the published ${period.label.toLowerCase()} period. Use the stated headway as a system-level schedule reference only.`
+    : minuteOfDay < firstMinute
+      ? `This selected time is before the published ${serviceDay.toLowerCase()} service window of ${serviceWindow}. Sakay cannot confirm a first train or station arrival.`
+      : `This selected time is after the published ${serviceDay.toLowerCase()} service window of ${serviceWindow}. Sakay cannot confirm a final train or station arrival.`;
   return {
-    availability: period ? 'SCHEDULED_HEADWAY_REFERENCE' : 'OUTSIDE_PUBLISHED_SERVICE_WINDOW',
+    availability,
     live: false,
     line: 'MRT-3',
     serviceDay,
+    serviceWindow,
     period: period?.label || null,
     publishedWindow: period ? `${period.start}–${period.end}` : null,
     publishedHeadway: period?.headway || null,
     sourceLabel: 'DOTr MRT-3 published schedule',
     sourceUrl: 'https://dotrmrt3.gov.ph/about-us',
+    guidance,
     limitation: 'Scheduled system-level reference only. It is not a station arrival, next-train time, vehicle location, delay, or live prediction.',
   };
 }

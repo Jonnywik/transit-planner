@@ -35,7 +35,7 @@ This is not a replacement for an authorized provider-backed integration. If Saka
 
 ## Scheduled headway and fare references
 
-The MRT-3 reference selects one published operational period for the rider’s selected local date/time and reports only the stated system-wide headway range. It cannot compute a reliable next arrival by adding intervals from the start of the operating day, because planned headways vary by period and do not establish that a specific train ran or reached a specific station. The reference links to the official DOTr MRT-3 published schedule. [4]
+The MRT-3 reference selects one published operational period for the rider’s selected local date/time and reports only the stated system-wide headway range. It now distinguishes **before the published service window**, **within a published headway period**, and **after the published service window**. It cannot compute a reliable next arrival by adding intervals from the start of the operating day, because planned headways vary by period and do not establish that a specific train ran or reached a specific station. The reference links to the official DOTr MRT-3 published schedule. [4]
 
 The PUV fare image supplied to Sakay is displayed as a dated reference, not a fare calculator. Its own headings have different stated effective dates and its vehicle categories do not include rail. The product continues to display route fares as unavailable until an approved, current source for the exact route and vehicle class exists. [5]
 

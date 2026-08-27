@@ -1002,12 +1002,13 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
     clearMapLayers();
     const referenceDetail = reference.availability === 'SCHEDULED_HEADWAY_REFERENCE'
       ? `<p class="reference-card__value">${escapeHtml(reference.publishedHeadway)}</p><p class="reference-card__detail">${escapeHtml(reference.serviceDay)} · ${escapeHtml(reference.period)} · published system window ${escapeHtml(reference.publishedWindow)}</p>`
-      : `<p class="reference-card__value">Outside published service window</p><p class="reference-card__detail">${escapeHtml(reference.serviceDay)} timetable reference</p>`;
+      : `<p class="reference-card__value">${reference.availability === 'BEFORE_PUBLISHED_SERVICE_WINDOW' ? 'Before published service window' : 'After published service window'}</p><p class="reference-card__detail">${escapeHtml(reference.serviceDay)} published system window ${escapeHtml(reference.serviceWindow)}</p>`;
     resultsPanel.innerHTML = `
       <div class="results-header"><div><p class="eyebrow">MRT-3</p><h2 class="results-header__title">Scheduled service reference</h2></div><button id="btn-close-results" class="results-header__close" title="Edit trip" aria-label="Edit trip">&times;</button></div>
       <section class="reference-card" aria-label="MRT-3 scheduled service reference">
         <p class="reference-card__eyebrow">${escapeHtml(reference.sourceLabel)}</p>
         ${referenceDetail}
+        <p class="reference-card__detail">${escapeHtml(reference.guidance)}</p>
         <p class="reference-card__notice">${escapeHtml(reference.limitation)}</p>
         <a class="reference-card__link" href="${escapeHtml(reference.sourceUrl)}" target="_blank" rel="noopener noreferrer">View official MRT-3 schedule</a>
       </section>`;

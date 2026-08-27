@@ -188,3 +188,10 @@
 - [x] Improve user-facing recovery and activation guidance for capabilities that remain dependent on external approval, credentials, or live authority data.
 - [x] Implement and test all additional functionality that can operate without inventing live transit, fare, road-closure, or accessibility information.
 - [x] Complete end-to-end validation and record the remaining external dependencies precisely.
+
+## Estimate Fallback and MRT-3 Service Guidance
+
+- [x] Review provider-first road and walking estimate recovery behavior and identify clearer operating states.
+- [x] Expand MRT-3 scheduled-reference guidance for before-service, current-service, and after-service time windows without creating arrival claims.
+- [x] Implement and test approved guidance and provider-first fallback improvements.
+- [x] Complete end-to-end validation, commit, and report the active in-app versus external fallback states.
