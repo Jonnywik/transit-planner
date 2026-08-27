@@ -29,6 +29,10 @@ function providers({ routeError } = {}) {
         return { availability: 'READY', itineraries: [], source: { provider: 'Test OTP', language, request } };
       },
     },
+    roadEtaProvider: {
+      async estimate(request) { return { availability: 'ROAD_ETA_READY', roadRoute: { durationSeconds: 480 }, source: { request } }; },
+      trafficStatus() { return { availability: 'ROAD_ETA_UNAVAILABLE', trafficLayer: 'MAP_RENDERER_NOT_CONFIGURED' }; },
+    },
   };
 }
 
@@ -73,6 +77,19 @@ test('validates and forwards route HTTP requests with language metadata', async 
     const payload = await response.json();
     assert.equal(payload.source.language, 'fil-PH');
     assert.equal(payload.source.request.origin.latitude, 14.6);
+  });
+});
+
+test('keeps road ETA and traffic status in a separate same-origin API contract', async () => {
+  await withServer(providers(), async (baseUrl) => {
+    const status = await fetch(`${baseUrl}/api/traffic/status`);
+    assert.equal(status.status, 200);
+    assert.equal((await status.json()).trafficLayer, 'MAP_RENDERER_NOT_CONFIGURED');
+    const estimate = await fetch(`${baseUrl}/api/road-eta`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ origin: { latitude: 14.6, longitude: 121 }, destination: { latitude: 14.55, longitude: 121.02 } }),
+    });
+    assert.equal(estimate.status, 200);
+    assert.equal((await estimate.json()).availability, 'ROAD_ETA_READY');
   });
 });
 

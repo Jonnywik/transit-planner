@@ -49,10 +49,10 @@ try {
   if (homepage.status !== 200 || stylesheet.status !== 200) throw new Error('The live mobile shell did not serve its homepage and stylesheet successfully.');
 
   const [html, css] = await Promise.all([homepage.text(), stylesheet.text()]);
-  const requiredShell = ['id="search-panel"', 'class="sheet-handle"', 'id="route-form"', 'id="departure-time"', 'id="btn-depart-now"', 'id="btn-search"', 'id="results-panel"'];
+  const requiredShell = ['id="search-panel"', 'class="sheet-handle"', 'id="route-form"', 'id="departure-time"', 'id="btn-depart-now"', 'id="btn-road-eta"', 'id="traffic-capability"', 'id="btn-search"', 'id="results-panel"'];
   const missingShell = requiredShell.filter((token) => !html.includes(token));
   if (missingShell.length) throw new Error(`Missing mobile planning-shell markup: ${missingShell.join(', ')}`);
-  const requiredMobileRules = ['@media (min-width: 720px)', '.search-panel { position: absolute', 'bottom: 0;', '.journey-time {', '.results-panel { position: absolute', '.results-provenance {'];
+  const requiredMobileRules = ['@media (min-width: 720px)', '.search-panel { position: absolute', 'bottom: 0;', '.journey-time {', '.btn-road-eta {', '.traffic-capability {', '.results-panel { position: absolute', '.results-provenance {'];
   const missingRules = requiredMobileRules.filter((token) => !css.includes(token));
   if (missingRules.length) throw new Error(`Missing responsive Signal Ribbon rules: ${missingRules.join(', ')}`);
 

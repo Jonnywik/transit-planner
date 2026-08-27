@@ -124,3 +124,25 @@
 - [x] Translate the approved-source requirements into a concise owner-facing sequence.
 - [x] Describe the automated validation, readiness, graph, and assurance handoffs without enabling live routing.
 - [x] Deliver the step-by-step guide and the safe blocked-state fallback.
+
+## Approved Multi-Source Transit and Interruption Foundation
+
+- [ ] Define governed source profiles, lineage rules, and source classes for OSM, SakayPH, Mobility Database, static schedules, and real-time data.
+- [ ] Add static staging validation that cannot promote historical SakayPH or catalog-discovered feeds into live routing.
+- [ ] Add interruption and real-time eligibility models that keep OSM-derived conditions advisory and never fabricate train arrivals.
+- [ ] Add no-touch validation/reporting, safety tests, rider disclosures, and source-governance documentation.
+- [ ] Run full validation, commit, and report the exact external source approvals still required.
+
+## Google Traffic and Arrival-Estimate Assessment
+
+- [x] Verify the Google Traffic Layer’s supported role and the correct route-time API boundary for road-travel estimates.
+- [x] Define rider-facing states that distinguish traffic visualization, road ETA, scheduled transit time, and verified live transit prediction.
+- [x] Prepare a safe traffic and ETA integration plan that preserves server-side credentials, source disclosure, and degraded-state behavior.
+
+## Approved Unified Data and Traffic Implementation
+
+- [x] Add governed source profiles, lineage checks, and staging-only rules for OSM, SakayPH, and Mobility Database data.
+- [x] Add interruption and real-time eligibility models that prevent unverified closures and static schedules from becoming live predictions.
+- [x] Add protected Google Routes road-ETA contracts, feature gates, and traffic availability states without exposing credentials.
+- [x] Add mobile source/availability disclosures and no-touch verification for road traffic, schedules, real-time, and interruption data.
+- [x] Run full validation, commit, and report the delivered source controls and external integration gates.

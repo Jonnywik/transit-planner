@@ -59,7 +59,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, [role="button"]
 .btn-pwd, .icon-button { min-height: 38px; border: 1px solid var(--line); border-radius: 11px; color: var(--blue); background: var(--paper-strong); cursor: pointer; transition: transform 160ms var(--ease-out), background 160ms var(--ease-out), color 160ms var(--ease-out); }
 .btn-pwd { display: inline-flex; align-items: center; gap: 5px; padding: 0 10px; font-size: 11px; font-weight: 800; }
 .btn-pwd[aria-pressed="true"], body.pwd-mode .btn-pwd { color: #fff; border-color: var(--blue); background: var(--blue); }
-.btn-pwd:active, .icon-button:active, .btn-search:active, .btn-reverse:active, .btn-gps:active, .btn-explore:active { transform: scale(.97); }
+.btn-pwd:active, .icon-button:active, .btn-search:active, .btn-road-eta:active, .btn-reverse:active, .btn-gps:active, .btn-explore:active { transform: scale(.97); }
 .icon-button { width: 38px; font-size: 24px; line-height: 1; }
 
 .search-panel { position: absolute; z-index: 650; bottom: 0; left: 0; width: 100%; max-height: min(72dvh, 590px); overflow: visible; padding: 8px 16px calc(16px + env(safe-area-inset-bottom)); color: var(--ink); background: rgba(248,244,235,.97); border-top: 1px solid rgba(18,63,115,.14); border-radius: 28px 28px 0 0; box-shadow: var(--shadow-sheet); transition: transform 220ms var(--ease-out); }
@@ -90,6 +90,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, [role="button"]
 .suggestions li:hover, .suggestions li[aria-selected="true"] { color: var(--blue); background: #eaf0f6; }
 .suggestions li:hover .suggestion__primary, .suggestions li[aria-selected="true"] .suggestion__primary { color: var(--blue); }
 .route-form__footer { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 10px; }
+.route-form__actions { display: grid; grid-template-columns: auto auto; gap: 7px; }
 .journey-time { display: grid; grid-template-columns: 1fr; gap: 6px; padding: 10px 12px; color: var(--ink); background: rgba(18,63,115,.055); border: 1px solid rgba(18,63,115,.12); border-radius: 14px; }
 .journey-time__label { display: block; color: var(--blue); font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: .05em; text-transform: uppercase; }
 .journey-time__hint { margin: 3px 0 0; color: var(--muted); font-size: 10px; line-height: 1.35; }
@@ -104,10 +105,15 @@ button:focus-visible, input:focus-visible, select:focus-visible, [role="button"]
 .btn-search { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 15px; color: #fff; background: var(--red); border: 1px solid var(--red); border-radius: 12px; box-shadow: 0 7px 14px rgba(213,51,62,.22); cursor: pointer; font-size: 12px; font-weight: 800; white-space: nowrap; transition: background 160ms var(--ease-out), transform 160ms var(--ease-out); }
 .btn-search:hover { background: var(--red-deep); }
 .btn-search.searching { opacity: .7; pointer-events: none; }
+.btn-road-eta { min-height: 44px; padding: 0 11px; color: var(--blue); background: var(--paper-strong); border: 1px solid var(--line); border-radius: 12px; cursor: pointer; font-size: 11px; font-weight: 800; white-space: nowrap; transition: transform 160ms var(--ease-out), border-color 160ms var(--ease-out), background 160ms var(--ease-out); }
+.btn-road-eta:hover { background: #eef3f7; border-color: rgba(18,63,115,.45); }
+.btn-road-eta.searching { opacity: .65; pointer-events: none; }
 
 .btn-explore { position: absolute; z-index: 500; right: 14px; bottom: min(365px, 51dvh); display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 12px; color: var(--blue); background: rgba(255,253,248,.95); border: 1px solid rgba(255,255,255,.8); border-radius: 14px; box-shadow: var(--shadow-float); cursor: pointer; font-size: 11px; font-weight: 800; backdrop-filter: blur(12px); }
 .btn-explore:disabled { opacity: .55; cursor: not-allowed; }
 .btn-explore.active { color: #fff; background: var(--blue); }
+.traffic-capability { position: absolute; z-index: 500; right: 14px; bottom: min(415px, 57dvh); max-width: 175px; padding: 7px 9px; color: var(--muted); background: rgba(255,253,248,.92); border: 1px solid rgba(18,63,115,.12); border-radius: 10px; box-shadow: var(--shadow-float); font-family: var(--font-mono); font-size: 9px; font-weight: 500; line-height: 1.35; backdrop-filter: blur(12px); }
+.traffic-capability--available { color: #0f6a4b; border-color: rgba(15,106,75,.24); background: rgba(239,249,244,.94); }
 .weather-banner { position: absolute; top: 83px; right: 12px; left: 12px; z-index: 680; display: flex; gap: 8px; align-items: center; padding: 10px 12px; color: var(--ink); background: #fff1e0; border: 1px solid #f0c98f; border-radius: 14px; box-shadow: var(--shadow-float); font-size: 12px; }
 .weather-banner[hidden] { display: none; }
 
@@ -134,6 +140,12 @@ button:focus-visible, input:focus-visible, select:focus-visible, [role="button"]
 .results-empty__icon { display: grid; width: 46px; height: 46px; margin: 0 auto 12px; place-items: center; color: var(--red); background: #fbe8e9; border-radius: 15px; font-size: 23px; }
 .results-empty__hint { max-width: 280px; color: var(--muted); font-size: 12px; line-height: 1.45; }
 .results-empty__action { min-height: 40px; margin-top: 5px; padding: 0 13px; color: #fff; background: var(--blue); border: 1px solid var(--blue); border-radius: 10px; cursor: pointer; font-size: 12px; font-weight: 800; }
+.road-eta-card { display: grid; gap: 11px; margin: 0 0 10px; padding: 16px; color: var(--ink); background: var(--paper-strong); border: 1px solid var(--line); border-radius: 16px; }
+.road-eta-card__eyebrow { margin: 0; color: var(--blue); font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; }
+.road-eta-card__duration { margin: 0; color: var(--ink); font-size: 32px; font-weight: 800; letter-spacing: -.06em; line-height: .95; }
+.road-eta-card__meta { display: flex; flex-wrap: wrap; gap: 6px 11px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+.road-eta-card__traffic { display: inline-flex; width: fit-content; padding: 5px 8px; color: #815918; background: #fff5d9; border: 1px solid #efd49e; border-radius: 8px; font-family: var(--font-mono); font-size: 10px; font-weight: 500; }
+.road-eta-card__notice { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
 .route-card { position: relative; margin: 0 0 9px; padding: 15px; overflow: hidden; background: var(--paper-strong); border: 1px solid var(--line); border-radius: 16px; cursor: pointer; transition: border-color 180ms var(--ease-out), transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out); }
 .route-card::before { position: absolute; top: 0; bottom: 0; left: 0; width: 4px; content: ''; background: var(--blue); opacity: .15; }
 .route-card--selected { border-color: rgba(18,63,115,.48); box-shadow: 0 7px 18px rgba(18,63,115,.1); }
@@ -200,6 +212,7 @@ body.pwd-mode .route-card, body.pwd-mode .input-group__wrapper, body.pwd-mode .p
   .sheet-handle { display: none; }
   .sheet-heading h2 { font-size: 20px; }
   .btn-explore { top: 20px; right: 20px; bottom: auto; }
+  .traffic-capability { top: 68px; right: 20px; bottom: auto; }
   .weather-banner { top: 95px; right: 20px; left: auto; width: 330px; }
   .results-panel { top: 88px; right: 20px; bottom: 20px; left: auto; width: min(410px, 36vw); max-height: none; padding: 12px; border: 1px solid rgba(18,63,115,.14); border-top: 4px solid var(--blue); border-radius: 20px; box-shadow: var(--shadow-float); }
   .results-panel::before { display: none; }

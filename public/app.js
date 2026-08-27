@@ -1,5 +1,6 @@
 import { createGeocodingClient } from './geocoding-client.js';
 import { createRoutingClient } from './routing-client.js';
+import { createRoadEtaClient } from './road-eta-client.js';
 import { createSearchRequestState } from './search-state.js';
 import { mergeRecommendationCache, rankRecommendations } from './search-recommendations.js';
 
@@ -17,6 +18,7 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
   const DEMO_MODE = new URLSearchParams(window.location.search).get('demo') === '1';
   const geocodingClient = createGeocodingClient();
   const routingClient = createRoutingClient();
+  const roadEtaClient = createRoadEtaClient();
 
   // --- DOM refs ---
   const inputOrigin = document.getElementById('input-origin');
@@ -36,6 +38,8 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
   const selectPassenger = document.getElementById('select-passenger');
   const departureTimeInput = document.getElementById('departure-time');
   const btnDepartNow = document.getElementById('btn-depart-now');
+  const btnRoadEta = document.getElementById('btn-road-eta');
+  const trafficCapability = document.getElementById('traffic-capability');
 
   // --- State ---
   let originCoords = null;
@@ -844,6 +848,56 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
     resultsPanel.querySelector('#btn-adjust-trip').addEventListener('click', () => returnToPlanner({ focusDeparture }));
   }
 
+  function formatRoadDuration(seconds) {
+    if (!Number.isFinite(seconds)) return 'Duration unavailable';
+    return `${Math.max(1, Math.round(seconds / 60))} min`;
+  }
+
+  function formatRoadDistance(meters) {
+    if (!Number.isFinite(meters)) return 'Distance unavailable';
+    return meters >= 1000 ? `${(meters / 1000).toFixed(1)} km` : `${meters} m`;
+  }
+
+  function renderRoadEta(result) {
+    if (result.availability === 'NO_ROAD_ROUTE') {
+      renderAvailabilityState({ title: 'No road route found.', message: 'Try different locations or check that both points are accessible by road.', icon: '⌕', source: result.source });
+      return;
+    }
+    const route = result.roadRoute;
+    const traffic = route.traffic || [];
+    const trafficSummary = traffic.length
+      ? `${traffic.filter((interval) => interval.speed === 'TRAFFIC_JAM').length} jam, ${traffic.filter((interval) => interval.speed === 'SLOW').length} slow section${traffic.length === 1 ? '' : 's'} reported`
+      : 'Traffic speed detail unavailable';
+    showResultsPanel();
+    currentRoutes = null;
+    currentRouteSource = result.source;
+    clearMapLayers();
+    resultsPanel.innerHTML = `
+      <div class="results-header">
+        <div>
+          <p class="eyebrow">Road travel</p>
+          <h2 class="results-header__title">Traffic-aware road ETA</h2>
+        </div>
+        <button id="btn-close-results" class="results-header__close" title="Edit trip" aria-label="Edit trip">&times;</button>
+      </div>
+      <section class="road-eta-card" aria-label="Traffic-aware road ETA details">
+        <p class="road-eta-card__eyebrow">Driving route only</p>
+        <p class="road-eta-card__duration">${formatRoadDuration(route.durationSeconds)}</p>
+        <div class="road-eta-card__meta"><span>${formatRoadDistance(route.distanceMeters)}</span><span>Leaving ${escapeHtml(departureTimeLabel())}</span></div>
+        <span class="road-eta-card__traffic">${escapeHtml(trafficSummary)}</span>
+        <p class="road-eta-card__notice">This is a traffic-aware road estimate. It is not a bus, jeepney, or train arrival prediction.</p>
+      </section>
+      <section class="results-provenance" aria-label="Road ETA source details">
+        <h3 class="results-provenance__title">Road ETA source</h3>
+        <dl class="results-provenance__grid">
+          <dt>Provider</dt><dd>${escapeHtml(result.source?.provider || 'Not supplied')}</dd>
+          <dt>Retrieved</dt><dd>${escapeHtml(result.source?.retrievedAt || 'Not supplied')}</dd>
+          <dt>Scope</dt><dd>${escapeHtml(result.source?.scope || 'Road traffic only')}</dd>
+        </dl>
+      </section>`;
+    resultsPanel.querySelector('#btn-close-results').addEventListener('click', returnToPlanner);
+  }
+
   function renderResults(routes, source = currentRouteSource) {
     showResultsPanel();
     currentRouteSource = source;
@@ -1183,6 +1237,28 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
     }
   }
 
+  async function performRoadEta() {
+    if (!originCoords || !destinationCoords) {
+      showToast('Select an origin and destination first');
+      return;
+    }
+    btnRoadEta.classList.add('searching');
+    btnRoadEta.textContent = 'Checking…';
+    try {
+      const result = await roadEtaClient.estimate({
+        origin: { latitude: originCoords[0], longitude: originCoords[1] },
+        destination: { latitude: destinationCoords[0], longitude: destinationCoords[1] },
+        departureTime: departureTimeIso(),
+      });
+      renderRoadEta(result);
+    } catch (error) {
+      renderAvailabilityState({ title: 'Traffic-aware road ETA unavailable.', message: error.message || 'Road travel time is not available. Transit schedules are not substituted.', icon: '!' });
+    } finally {
+      btnRoadEta.classList.remove('searching');
+      btnRoadEta.textContent = 'Road ETA';
+    }
+  }
+
   function resetButton() {
     btnSearch.classList.remove('searching');
     btnSearch.querySelector('span').textContent = 'Show routes';
@@ -1191,6 +1267,16 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
   routeForm.addEventListener('submit', (e) => {
     e.preventDefault();
     performSearch();
+  });
+  btnRoadEta.addEventListener('click', performRoadEta);
+
+  roadEtaClient.trafficStatus().then((status) => {
+    const configured = status.trafficLayer === 'AVAILABLE';
+    trafficCapability.textContent = configured ? 'Current traffic conditions available' : 'Traffic map layer unavailable';
+    trafficCapability.classList.toggle('traffic-capability--available', configured);
+    trafficCapability.title = configured ? 'Current traffic conditions can be shown on the approved map renderer.' : 'A configured Google Maps renderer is required. This map does not infer road closures.';
+  }).catch(() => {
+    trafficCapability.textContent = 'Traffic conditions unavailable';
   });
 
   // =====================
@@ -1700,30 +1786,9 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
     return null;
   }
 
-  // Generate predicted arrival info for a leg
-  function getPredictedArrival(leg) {
-    if (leg.mode === 'WALK') return null;
-
-    // Check if this route has real-time data
-    const hasRealtime = leg.mode === 'RAIL'; // trains always have RT; buses sometimes
-    const isBusWithRT = leg.mode === 'BUS' && Math.random() > 0.3;
-
-    if (hasRealtime || isBusWithRT) {
-      const stopsAway = Math.ceil(Math.random() * 5) + 1;
-      const etaMin = Math.round(stopsAway * 2 + Math.random() * 3);
-      const delayMin = Math.random() < 0.35 ? Math.round(Math.random() * 10) : 0;
-      const status = getVehicleStatus(delayMin);
-      return {
-        hasRealtime: true,
-        stopsAway,
-        etaMin,
-        delayMin,
-        status,
-        text: `${leg.route || leg.mode} is ${stopsAway} stop${stopsAway > 1 ? 's' : ''} away (~${etaMin} min)`,
-      };
-    }
-
-    return { hasRealtime: false, text: null };
+  // Legacy mock helper intentionally reports no live prediction. Real-time updates require the governed source gate.
+  function getPredictedArrival() {
+    return { hasRealtime: false, status: 'LIVE_TRANSIT_UPDATE_UNAVAILABLE', text: null };
   }
 
   // =====================

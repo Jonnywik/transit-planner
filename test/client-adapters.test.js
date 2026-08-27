@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGeocodingClient } from '../public/geocoding-client.js';
 import { createRoutingClient } from '../public/routing-client.js';
+import { createRoadEtaClient } from '../public/road-eta-client.js';
 
 test('geocoding adapter serializes search and reverse requests and returns normalized payload fields', async () => {
   const calls = [];
@@ -52,4 +53,17 @@ test('routing adapter retains non-success metadata and aborts', async () => {
 test('routing adapter falls back to a stable error code when the provider omits one', async () => {
   const client = createRoutingClient({ fetchImpl: async () => new Response('{}', { status: 502 }) });
   await assert.rejects(() => client.plan({}), (error) => error.code === 'ROUTING_ERROR' && error.message === 'Routing service is unavailable.');
+});
+
+test('road ETA adapter remains same-origin and does not invent a road estimate after an unavailable response', async () => {
+  const calls = [];
+  const client = createRoadEtaClient({ fetchImpl: async (url, options = {}) => {
+    calls.push({ url, options });
+    return url === '/api/traffic/status'
+      ? new Response(JSON.stringify({ availability: 'ROAD_ETA_UNAVAILABLE' }), { status: 200 })
+      : new Response(JSON.stringify({ error: 'Traffic-aware road ETA is not configured.' }), { status: 503 });
+  } });
+  assert.equal((await client.trafficStatus()).availability, 'ROAD_ETA_UNAVAILABLE');
+  await assert.rejects(() => client.estimate({ origin: { latitude: 14.6, longitude: 121 }, destination: { latitude: 14.55, longitude: 121.02 } }), /not configured/);
+  assert.deepEqual(calls.map((call) => call.url), ['/api/traffic/status', '/api/road-eta']);
 });

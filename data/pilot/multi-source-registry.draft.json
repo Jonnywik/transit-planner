@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "status": "DRAFT",
+  "profiles": [
+    {
+      "id": "osm-metro-manila-network",
+      "lineage": "openstreetmap-community-data",
+      "sourceClass": "STAGING_ONLY",
+      "role": "STREET_NETWORK",
+      "status": "PENDING_APPROVAL",
+      "supportBoundary": "Metro Manila pilot extent",
+      "notes": "Pinned OSM extract required. Map context is not a verified live closure source."
+    },
+    {
+      "id": "sakayph-metro-manila-gtfs-historical",
+      "lineage": "dotc-philippine-transit-app-challenge",
+      "sourceClass": "REFERENCE_ONLY",
+      "role": "SURFACE_TRANSIT_STATIC",
+      "status": "HISTORICAL",
+      "canonicalUrl": "https://github.com/sakayph/gtfs",
+      "revision": "b7394ccd0c22e7fcc18cc6b53baa1200e99e8a87",
+      "notes": "Pinned historical reference for jeepney and bus parser or graph rehearsal only; not current travel guidance."
+    },
+    {
+      "id": "mobility-database-philippines-catalog",
+      "lineage": "dotc-philippine-transit-app-challenge",
+      "sourceClass": "REFERENCE_ONLY",
+      "role": "RAIL_CATALOG",
+      "status": "INACTIVE_CATALOG",
+      "canonicalUrl": "https://mobilitydatabase.org/feeds/gtfs/mdb-1106",
+      "notes": "Catalog/discovery metadata only; it does not establish producer rights or current schedule coverage."
+    },
+    {
+      "id": "operator-rail-static-gtfs",
+      "lineage": "pending-operator-rail-release",
+      "sourceClass": "APPROVED_STATIC",
+      "role": "RAIL_STATIC",
+      "status": "PENDING_APPROVAL",
+      "notes": "Reserved for a current, rights-cleared LRT/MRT operator GTFS Schedule source."
+    },
+    {
+      "id": "operator-rail-realtime",
+      "lineage": "pending-operator-rail-realtime-release",
+      "sourceClass": "APPROVED_REALTIME",
+      "role": "RAIL_REALTIME",
+      "status": "PENDING_APPROVAL",
+      "notes": "Reserved for an approved GTFS-RT or equivalent train operational feed reconciled to active static IDs."
+    },
+    {
+      "id": "operator-road-interruptions",
+      "lineage": "pending-road-authority-interruption-release",
+      "sourceClass": "APPROVED_REALTIME",
+      "role": "ROAD_INTERRUPTION",
+      "status": "PENDING_APPROVAL",
+      "notes": "Reserved for a road-management authority’s time-bounded closure or interruption feed."
+    },
+    {
+      "id": "google-routes-road-eta",
+      "lineage": "google-maps-platform-routes",
+      "sourceClass": "EXTERNAL_ROAD_ETA",
+      "role": "ROAD_ETA",
+      "status": "PENDING_CONFIGURATION",
+      "notes": "Server-side traffic-aware road estimates only; not transit arrival predictions."
+    }
+  ]
+}
