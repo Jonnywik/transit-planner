@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "sakayph-metro-manila-gtfs-historical-documentation-fixture",
+  "status": "DOCUMENTATION_ONLY",
+  "sourceClass": "HISTORICAL_FIXTURE",
+  "canonicalUrl": "https://github.com/sakayph/gtfs",
+  "revision": "b7394ccd0c22e7fcc18cc6b53baa1200e99e8a87",
+  "revisionAuthoredAt": "2015-03-24T14:16:49+08:00",
+  "observedCalendarEndDate": "20200630",
+  "observedFiles": [
+    "agency.txt",
+    "calendar.txt",
+    "feed_info.txt",
+    "frequencies.txt",
+    "routes.txt",
+    "shapes.txt",
+    "stop_times.txt",
+    "stops.txt",
+    "trips.txt"
+  ],
+  "licenseNotice": "The upstream Developer License Agreement controls any use of DOTC Data. This manifest records source metadata only and does not copy GTFS records into Sakay.",
+  "permittedUse": "Offline parser, graph, and interface rehearsal for private documentation only.",
+  "prohibitedUse": [
+    "current travel guidance",
+    "live transit routing",
+    "current route, timetable, fare, or arrival claims",
+    "production activation",
+    "automatic external-feed retrieval",
+    "release-gate eligibility"
+  ],
+  "productionEligible": false,
+  "riderVisible": false,
+  "requiresExplicitDeveloperOptIn": true
+}

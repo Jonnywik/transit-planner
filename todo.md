@@ -209,3 +209,10 @@
 - [x] Verify current authoritative rules that can support a side-project fare calculator and define explicit unsupported-journey behavior.
 - [x] Implement source-labeled route and fare calculations only where input eligibility can be demonstrated; preserve external handoff elsewhere.
 - [x] Validate, commit, and document supported journey classes, effective dates, and remaining data gaps.
+
+## MRT-3 Static Reference Expansion and Historical Fixture Isolation
+
+- [x] Inspect the current MRT-3 static station/fare implementation and historical-source controls.
+- [x] Define an unmistakable development-only fixture boundary for outdated repository data, with no production activation path.
+- [x] Expand static MRT-3 station/fare reference behavior and tests without converting historical data into current routing advice.
+- [x] Validate, commit, and document the resulting static-reference and documentation-fixture boundaries.
