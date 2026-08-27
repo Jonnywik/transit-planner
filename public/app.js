@@ -3,6 +3,7 @@ import { createRoutingClient } from './routing-client.js';
 import { createRoadEtaClient } from './road-eta-client.js';
 import { createWalkingEtaClient } from './walking-eta-client.js';
 import { createCapabilitiesClient } from './capabilities-client.js';
+import { createGoogleTransitDirectionsUrl } from './google-transit-handoff.js';
 import { createSearchRequestState } from './search-state.js';
 import { mergeRecommendationCache, rankRecommendations } from './search-recommendations.js';
 
@@ -55,6 +56,7 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
   let currentRoutes = null;
   let currentRouteSource = null;
   let informationGuideMode = !DEMO_MODE;
+  let transitHandoffAvailable = false;
   let routeLayers = [];
 
   function escapeHtml(value) {
@@ -931,11 +933,29 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
   }
 
   function renderTransitUnavailable() {
-    renderAvailabilityState({
-      title: 'Transit schedules are unavailable.',
-      message: 'Sakay can show map information and mode-specific road or walking estimates. It cannot currently show transit routes, next-train times, or vehicle arrivals.',
-      icon: '!',
-    });
+    const handoffUrl = transitHandoffAvailable && originCoords && destinationCoords
+      ? createGoogleTransitDirectionsUrl({
+        origin: { latitude: originCoords[0], longitude: originCoords[1] },
+        destination: { latitude: destinationCoords[0], longitude: destinationCoords[1] },
+      })
+      : null;
+    showResultsPanel();
+    currentRoutes = null;
+    currentRouteSource = null;
+    clearMapLayers();
+    resultsPanel.innerHTML = `
+      <div class="results-header"><div><p class="eyebrow">Transit options</p><h2 class="results-header__title">Sakay schedules are unavailable</h2></div><button id="btn-close-results" class="results-header__close" title="Edit trip" aria-label="Edit trip">&times;</button></div>
+      <div class="results-empty results-empty--status" role="status" aria-live="polite">
+        <span class="results-empty__icon" aria-hidden="true">!</span>
+        <p>Sakay cannot calculate a verified transit itinerary, next-train time, or vehicle arrival without a governed schedule source.</p>
+        <p class="results-empty__hint">${handoffUrl ? 'You can open these selected locations in Google Maps for its own transit directions. Sakay does not import or verify that provider’s route or time.' : 'Select an origin and destination to open them in an external transit-direction provider, or use a separate walking or driving estimate.'}</p>
+        ${handoffUrl ? '<a id="btn-google-transit-handoff" class="results-empty__action" target="_blank" rel="noopener noreferrer">Open transit options</a>' : ''}
+        <button type="button" id="btn-adjust-trip" class="results-empty__action">Edit trip</button>
+      </div>`;
+    resultsPanel.querySelector('#btn-close-results').addEventListener('click', returnToPlanner);
+    resultsPanel.querySelector('#btn-adjust-trip').addEventListener('click', returnToPlanner);
+    const handoff = resultsPanel.querySelector('#btn-google-transit-handoff');
+    if (handoff && handoffUrl) handoff.href = handoffUrl;
   }
 
   function renderResults(routes, source = currentRouteSource) {
@@ -1347,12 +1367,13 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
 
   capabilitiesClient.get().then((capabilities) => {
     const transitAvailable = capabilities.transitRouting?.availability === 'AVAILABLE';
+    transitHandoffAvailable = capabilities.transitRouting?.handoff?.availability === 'AVAILABLE';
     informationGuideMode = !transitAvailable && !DEMO_MODE;
-    guideCapability.textContent = transitAvailable ? 'Transit schedules available' : 'Transit schedules unavailable · estimates only';
-    guideCapability.classList.toggle('guide-capability--available', transitAvailable);
+    guideCapability.textContent = transitAvailable ? 'Transit schedules available' : transitHandoffAvailable ? 'Transit schedule unavailable · external transit options' : 'Transit schedules unavailable · estimates only';
+    guideCapability.classList.toggle('guide-capability--available', transitAvailable || transitHandoffAvailable);
     if (informationGuideMode) {
-      btnSearch.querySelector('span').textContent = 'Transit unavailable';
-      btnSearch.title = 'Current governed transit schedules are not connected';
+      btnSearch.querySelector('span').textContent = transitHandoffAvailable ? 'Open transit options' : 'Transit unavailable';
+      btnSearch.title = transitHandoffAvailable ? 'Open selected locations in external transit directions' : 'Current governed transit schedules are not connected';
     }
   }).catch(() => {
     informationGuideMode = !DEMO_MODE;

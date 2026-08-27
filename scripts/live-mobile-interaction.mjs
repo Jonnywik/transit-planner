@@ -184,13 +184,14 @@ try {
       const box = element.getBoundingClientRect();
       return { top: box.top, bottom: box.bottom, text: element.textContent.trim() };
     });
-    const state = { visible: !document.getElementById('results-panel').hidden, plannerHidden: document.getElementById('search-panel').hidden, text: document.getElementById('results-panel').textContent, paragraphs };
+    const handoff = document.getElementById('btn-google-transit-handoff');
+    const state = { visible: !document.getElementById('results-panel').hidden, plannerHidden: document.getElementById('search-panel').hidden, text: document.getElementById('results-panel').textContent, paragraphs, handoff: handoff ? { href: handoff.href, target: handoff.target, rel: handoff.rel } : null };
     const recovery = document.getElementById('btn-adjust-trip');
     recovery?.click();
     return { ...state, recoveryAvailable: Boolean(recovery), plannerRecovered: !document.getElementById('search-panel').hidden };
   })()`);
   const textOverlaps = unavailableState.paragraphs.some((paragraph, index) => index > 0 && paragraph.top < unavailableState.paragraphs[index - 1].bottom + 6);
-  if (!unavailableState.visible || !unavailableState.plannerHidden || !unavailableState.text.includes('Transit schedules are unavailable.') || !unavailableState.recoveryAvailable || !unavailableState.plannerRecovered || textOverlaps) throw new Error(`The no-GTFS transit-unavailable sheet did not render clearly or recover to the planner. Paragraph layout: ${JSON.stringify(unavailableState.paragraphs)}`);
+  if (!unavailableState.visible || !unavailableState.plannerHidden || !unavailableState.text.includes('Sakay schedules are unavailable') || !unavailableState.handoff || !unavailableState.handoff.href.includes('www.google.com/maps/dir/') || !unavailableState.handoff.href.includes('travelmode=transit') || unavailableState.handoff.target !== '_blank' || !unavailableState.handoff.rel.includes('noopener') || !unavailableState.recoveryAvailable || !unavailableState.plannerRecovered || textOverlaps) throw new Error(`The no-GTFS transit handoff sheet did not render clearly or recover to the planner. Details: ${JSON.stringify(unavailableState)}`);
 
   const screenshotPath = resolve(outputDir, 'mobile-route-result.png');
   await client.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false }, sessionId).then(async ({ data }) => {
@@ -200,7 +201,7 @@ try {
   const screenshot = await stat(screenshotPath);
   if (screenshot.size < 5_000) throw new Error('The live mobile interaction screenshot is unexpectedly small.');
 
-  console.log(`Live mobile interaction smoke passed: bottom sheet, departure time, GPS selection, real geocoding selections, demo disclosure, route selection, map focus, distinct walking/driving estimate recovery, reverse trip, and truthful no-GTFS transit recovery. Artifact: ${screenshotPath} (${screenshot.size} bytes)`);
+  console.log(`Live mobile interaction smoke passed: bottom sheet, departure time, GPS selection, real geocoding selections, demo disclosure, route selection, map focus, distinct walking/driving estimate recovery, reverse trip, and truthful external transit handoff. Artifact: ${screenshotPath} (${screenshot.size} bytes)`);
 } finally {
   client?.close();
   chrome.kill('SIGTERM');

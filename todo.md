@@ -166,3 +166,10 @@
 - [x] Inventory implemented rider, routing, estimate, source-governance, security, and automation capabilities.
 - [x] Classify each capability as available, configuration-gated, advisory-only, demo-only, historical staging-only, or unavailable.
 - [x] Publish and deliver a concise current-capabilities document.
+
+## Non-GTFS Capability Preservation
+
+- [x] Inventory every rider-facing function that currently depends on or references static transit data.
+- [x] Evaluate controlled non-GTFS alternatives that preserve utility without claiming a verified transit route, schedule, or arrival.
+- [x] Define replacement capability states, provenance labels, validation criteria, and safe failure behavior.
+- [x] Implement and validate approved non-GTFS replacements without removing existing functionality.
