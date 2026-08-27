@@ -32,14 +32,22 @@ function providers({ routeError } = {}) {
   };
 }
 
-test('serves the application with security headers and protects missing static paths', async () => {
+test('serves only public assets with browser hardening headers', async () => {
   await withServer(providers(), async (baseUrl) => {
     const home = await fetch(`${baseUrl}/`);
     assert.equal(home.status, 200);
     assert.match(home.headers.get('content-security-policy'), /default-src 'self'/);
+    assert.match(home.headers.get('content-security-policy'), /frame-ancestors 'none'/);
     assert.equal(home.headers.get('x-content-type-options'), 'nosniff');
+    assert.equal(home.headers.get('x-frame-options'), 'DENY');
     const missing = await fetch(`${baseUrl}/does-not-exist`);
     assert.equal(missing.status, 404);
+    for (const privatePath of ['/.git/config', '/.env', '/package.json', '/test/server.test.js', '/docs/CI_VERIFICATION.md', '/server.js']) {
+      const privateResponse = await fetch(`${baseUrl}${privatePath}`);
+      assert.equal(privateResponse.status, 404, `${privatePath} must not be publicly served`);
+    }
+    const methodNotAllowed = await fetch(`${baseUrl}/`, { method: 'POST' });
+    assert.equal(methodNotAllowed.status, 405);
   });
 });
 

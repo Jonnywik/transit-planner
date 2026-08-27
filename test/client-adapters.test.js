@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createGeocodingClient } from '../geocoding-client.js';
-import { createRoutingClient } from '../routing-client.js';
+import { createGeocodingClient } from '../public/geocoding-client.js';
+import { createRoutingClient } from '../public/routing-client.js';
 
 test('geocoding adapter serializes search and reverse requests and returns normalized payload fields', async () => {
   const calls = [];

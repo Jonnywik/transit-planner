@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { createReadStream, existsSync } from 'node:fs';
-import { extname, join, normalize, resolve } from 'node:path';
+import { extname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { GatewayError, createGeocodingGateway } from './server/geocoding-gateway.js';
 import { RoutingProviderError, createOtpRoutingProvider } from './server/routing-provider.js';
@@ -12,6 +12,9 @@ const contentTypes = {
   '.json': 'application/json; charset=utf-8',
   '.svg': 'image/svg+xml',
 };
+
+const projectRoot = resolve(fileURLToPath(new URL('.', import.meta.url)));
+const defaultPublicRoot = resolve(projectRoot, 'public');
 
 function sendJson(response, status, body) {
   response.writeHead(status, {
@@ -64,26 +67,46 @@ async function handleApi(request, response, url, geocodingGateway, routingProvid
   }
 }
 
-function serveStatic(response, pathname, rootDir) {
-  const requestedPath = pathname === '/' ? '/index.html' : pathname;
-  const filePath = normalize(join(rootDir, requestedPath));
-  if (!filePath.startsWith(rootDir) || !existsSync(filePath)) {
-    response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-    response.end('Not found.');
+function denyStaticPath(response) {
+  response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', 'X-Content-Type-Options': 'nosniff' });
+  response.end('Not found.');
+}
+
+function serveStatic(request, response, pathname, rootDir) {
+  if (!['GET', 'HEAD'].includes(request.method || 'GET')) {
+    response.writeHead(405, { Allow: 'GET, HEAD', 'Content-Type': 'text/plain; charset=utf-8', 'X-Content-Type-Options': 'nosniff' });
+    response.end('Method not allowed.');
+    return;
+  }
+
+  const requestedPath = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
+  const hasHiddenPathSegment = requestedPath.split('/').some((segment) => segment.startsWith('.'));
+  const filePath = resolve(rootDir, requestedPath);
+  const escapesPublicRoot = relative(rootDir, filePath).startsWith('..');
+  if (hasHiddenPathSegment || escapesPublicRoot || !existsSync(filePath)) {
+    denyStaticPath(response);
     return;
   }
 
   response.writeHead(200, {
-    'Content-Security-Policy': "default-src 'self'; connect-src 'self' https://*.tile.openstreetmap.org; img-src 'self' data: https://*.tile.openstreetmap.org https://3000-itph7nc61pkgr18fbw6gh-aca06218.sg1.manus.computer; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; script-src 'self' https://unpkg.com; font-src 'self' https://fonts.gstatic.com;",
+    'Content-Security-Policy': "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; connect-src 'self' https://*.tile.openstreetmap.org; img-src 'self' data: https://*.tile.openstreetmap.org https://3000-itph7nc61pkgr18fbw6gh-aca06218.sg1.manus.computer; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; script-src 'self' https://unpkg.com; font-src 'self' https://fonts.gstatic.com;",
     'Content-Type': contentTypes[extname(filePath)] || 'application/octet-stream',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'X-Frame-Options': 'DENY',
     'X-Content-Type-Options': 'nosniff',
   });
-  createReadStream(filePath).pipe(response);
+  if (request.method === 'HEAD') {
+    response.end();
+    return;
+  }
+  createReadStream(filePath).on('error', () => {
+    if (!response.headersSent) denyStaticPath(response);
+    else response.destroy();
+  }).pipe(response);
 }
 
 export function createSakayServer({
-  rootDir = resolve(fileURLToPath(new URL('.', import.meta.url))),
+  rootDir = defaultPublicRoot,
   geocodingGateway = createGeocodingGateway(),
   routingProvider = createOtpRoutingProvider(),
 } = {}) {
@@ -93,7 +116,7 @@ export function createSakayServer({
       handleApi(request, response, url, geocodingGateway, routingProvider);
       return;
     }
-    serveStatic(response, url.pathname, rootDir);
+    serveStatic(request, response, url.pathname, rootDir);
   });
 }
 

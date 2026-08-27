@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createSearchRequestState } from '../search-state.js';
+import { createSearchRequestState } from '../public/search-state.js';
 
 test('invalidates stale autocomplete responses when a user continues typing', () => {
   const state = createSearchRequestState();

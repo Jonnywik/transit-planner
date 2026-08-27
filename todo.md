@@ -69,3 +69,13 @@
 - [x] Rerun the full mobile location-selection, route-planning, route-card, and reverse-trip interaction flow.
 - [x] Review the live mobile red–white–blue design and Sakay logo implementation.
 - [x] Deliver the verified live-test and design-review result.
+
+## Approved Sprint 0 — Secure Deployment and Data Readiness
+
+- [x] Isolate public assets and block repository metadata, environment, source, test, and documentation paths from HTTP delivery.
+- [x] Add browser delivery hardening and regression tests for safe headers and non-public path denial.
+- [x] Add managed dependency and code-security automation with immutable workflow action references.
+- [x] Prepare the pilot-corridor data inventory, governance checklist, and pre-enable decision record.
+- [x] Validate all Sprint 0 controls, commit the result, and identify approvals required before live routing.
+
+> Sprint 0 implementation controls are complete. The Sprint 0 exit gate remains pending the documented data-rights, source-validity, graph, golden-route, accessibility, and operational approvals in `docs/PILOT_DATA_GOVERNANCE.md`.

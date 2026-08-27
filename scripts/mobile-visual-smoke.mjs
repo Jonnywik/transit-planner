@@ -39,7 +39,7 @@ function close(server) {
   return new Promise((resolvePromise) => server.close(resolvePromise));
 }
 
-const server = createSakayServer({ rootDir });
+const server = createSakayServer({ rootDir: resolve(rootDir, 'public') });
 const port = await listen(server);
 const baseUrl = `http://127.0.0.1:${port}`;
 const screenshotPath = resolve(outputDir, 'mobile-home.png');
