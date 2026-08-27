@@ -1,5 +1,8 @@
 /* Transit Operations Calm: creates a user-initiated Google Maps transit handoff, never imports or fabricates third-party itineraries. */
 function coordinate(value, label, minimum, maximum) {
+  if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) {
+    throw new TypeError(`A valid ${label} is required for the transit handoff.`);
+  }
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed < minimum || parsed > maximum) {
     throw new TypeError(`A valid ${label} is required for the transit handoff.`);

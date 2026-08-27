@@ -17,4 +17,5 @@ test('builds a universal user-initiated Google Maps transit handoff from selecte
 
 test('does not create a transit handoff from invalid coordinates', () => {
   assert.throws(() => createGoogleTransitDirectionsUrl({ origin: { latitude: 'x', longitude: 121 }, destination: { latitude: 14, longitude: 121 } }), /valid Origin latitude/);
+  assert.throws(() => createGoogleTransitDirectionsUrl({ origin: { latitude: null, longitude: 121 }, destination: { latitude: 14, longitude: 121 } }), /valid Origin latitude/);
 });
