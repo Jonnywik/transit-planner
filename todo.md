@@ -96,3 +96,9 @@
 - [x] Add responsive query-state feedback, address-result prioritization, and accessible real-time recommendation controls.
 - [x] Extend client/gateway coverage and 390 × 844 live interaction checks for live recommendations.
 - [x] Validate the secure same-origin search flow, commit, and report any external-provider limitations.
+
+## OpenTripPlanner and GTFS Configuration Guide
+
+- [x] Review the repository’s required OTP provenance variables, pilot gates, and validation commands.
+- [x] Prepare a step-by-step configuration and GTFS source-validation guide without enabling live routing.
+- [x] Deliver the implementation checklist and list of approvals still required for a production route service.
