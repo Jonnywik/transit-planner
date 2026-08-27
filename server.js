@@ -74,7 +74,7 @@ function serveStatic(response, pathname, rootDir) {
   }
 
   response.writeHead(200, {
-    'Content-Security-Policy': "default-src 'self'; connect-src 'self' https://*.tile.openstreetmap.org; img-src 'self' data: https://*.tile.openstreetmap.org; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; script-src 'self' https://unpkg.com; font-src 'self' https://fonts.gstatic.com;",
+    'Content-Security-Policy': "default-src 'self'; connect-src 'self' https://*.tile.openstreetmap.org; img-src 'self' data: https://*.tile.openstreetmap.org https://3000-itph7nc61pkgr18fbw6gh-aca06218.sg1.manus.computer; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; script-src 'self' https://unpkg.com; font-src 'self' https://fonts.gstatic.com;",
     'Content-Type': contentTypes[extname(filePath)] || 'application/octet-stream',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'X-Content-Type-Options': 'nosniff',

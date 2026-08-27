@@ -4,11 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check app.js && node --check geocoding-client.js && node --check routing-client.js && node --check search-state.js && node --check server.js && node --check server/geocoding-gateway.js && node --check server/routing-provider.js",
+    "check": "node --check app.js && node --check geocoding-client.js && node --check routing-client.js && node --check search-state.js && node --check server.js && node --check server/geocoding-gateway.js && node --check server/routing-provider.js && node --check scripts/mobile-visual-smoke.mjs && node --check scripts/live-mobile-interaction.mjs",
     "coverage": "node --test --experimental-test-coverage --test-coverage-include='server.js' --test-coverage-include='server/**/*.js' --test-coverage-include='geocoding-client.js' --test-coverage-include='routing-client.js' --test-coverage-include='search-state.js'",
     "dev": "node server.js",
     "start": "node server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "smoke:mobile": "node scripts/mobile-visual-smoke.mjs",
+    "smoke:mobile:live": "node scripts/live-mobile-interaction.mjs"
   },
   "engines": {
     "node": ">=20"

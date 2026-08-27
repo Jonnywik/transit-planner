@@ -55,3 +55,17 @@
 - [x] Rebuild the interface around thumb-reachable mobile route planning, map context, and responsive route cards.
 - [x] Validate mobile and desktop layouts, then refine the visual system and interaction states.
 - [x] Commit and push the completed redesign.
+
+## Mobile Visual Smoke and Live Interaction Tests
+
+- [x] Add deterministic mobile viewport smoke assertions and screenshot artifacts to CI.
+- [x] Exercise the live planning sheet, geolocation control, route form, and unavailable routing state.
+- [x] Validate the workflow locally and on GitHub Actions, then document the new quality gate.
+- [x] Commit and push the visual-smoke coverage and interaction test results.
+
+## Approved Live Geocoding and Mobile Design Review
+
+- [x] Restart the local service with the approved `GEOCODER_USER_AGENT` configuration.
+- [x] Rerun the full mobile location-selection, route-planning, route-card, and reverse-trip interaction flow.
+- [x] Review the live mobile red–white–blue design and Sakay logo implementation.
+- [x] Deliver the verified live-test and design-review result.

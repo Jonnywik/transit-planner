@@ -35,3 +35,5 @@ jobs:
         run: npm run coverage
       - name: Check JavaScript syntax
         run: npm run check
+      - name: Run mobile visual smoke check
+        run: npm run smoke:mobile

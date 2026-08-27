@@ -29,6 +29,7 @@ import { createSearchRequestState } from './search-state.js';
   const btnPwd = document.getElementById('btn-pwd-toggle');
   const btnSearch = document.getElementById('btn-search');
   const routeForm = document.getElementById('route-form');
+  const searchPanel = document.getElementById('search-panel');
   const mapEl = document.getElementById('map');
   const resultsPanel = document.getElementById('results-panel');
   const selectPassenger = document.getElementById('select-passenger');
@@ -43,6 +44,17 @@ import { createSearchRequestState } from './search-state.js';
 
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
+  }
+
+  function showResultsPanel() {
+    searchPanel.hidden = true;
+    resultsPanel.hidden = false;
+  }
+
+  function closeResultsPanel() {
+    resultsPanel.hidden = true;
+    searchPanel.hidden = false;
+    clearMapLayers();
   }
 
   // =====================
@@ -723,28 +735,44 @@ import { createSearchRequestState } from './search-state.js';
   // RESULTS RENDERING
   // =====================
   function renderAvailabilityState({ title, message, icon = 'ⓘ' }) {
-    resultsPanel.hidden = false;
+    showResultsPanel();
     currentRoutes = null;
     clearMapLayers();
     resultsPanel.innerHTML = `
+      <div class="results-header">
+        <div>
+          <p class="eyebrow">Trip status</p>
+          <h2 class="results-header__title">Need to adjust your trip?</h2>
+        </div>
+        <button id="btn-close-results" class="results-header__close" title="Edit trip" aria-label="Edit trip">&times;</button>
+      </div>
       <div class="results-empty results-empty--status" role="status" aria-live="polite">
         <span class="results-empty__icon" aria-hidden="true">${icon}</span>
         <p>${escapeHtml(title)}</p>
         <p class="results-empty__hint">${escapeHtml(message)}</p>
       </div>`;
+    resultsPanel.querySelector('#btn-close-results').addEventListener('click', closeResultsPanel);
   }
 
   function renderResults(routes, source = null) {
-    resultsPanel.hidden = false;
+    showResultsPanel();
     resultsPanel.innerHTML = '';
 
     if (!routes || !routes.length) {
       resultsPanel.innerHTML = `
+        <div class="results-header">
+          <div>
+            <p class="eyebrow">Trip status</p>
+            <h2 class="results-header__title">No route match</h2>
+          </div>
+          <button id="btn-close-results" class="results-header__close" title="Edit trip" aria-label="Edit trip">&times;</button>
+        </div>
         <div class="results-empty">
           <span class="results-empty__icon">🔍</span>
           <p>No scheduled route was found between these locations.</p>
           <p class="results-empty__hint">Try different locations, a different departure time, or a supported area.</p>
         </div>`;
+      resultsPanel.querySelector('#btn-close-results').addEventListener('click', closeResultsPanel);
       return;
     }
 
@@ -760,10 +788,7 @@ import { createSearchRequestState } from './search-state.js';
     `;
     resultsPanel.appendChild(header);
 
-    header.querySelector('#btn-close-results').addEventListener('click', () => {
-      resultsPanel.hidden = true;
-      clearMapLayers();
-    });
+    header.querySelector('#btn-close-results').addEventListener('click', closeResultsPanel);
 
     routes.forEach((route, index) => {
       const card = document.createElement('div');
@@ -1039,7 +1064,6 @@ import { createSearchRequestState } from './search-state.js';
       }
     } catch (error) {
       renderAvailabilityState({ title: 'Routing service unavailable.', message: error.message || 'This prototype cannot provide live journey guidance at the moment.', icon: '!' });
-      showToast(error.message || 'Routing service unavailable.');
       console.error('Search error:', error);
     } finally {
       resetButton();
@@ -1048,7 +1072,7 @@ import { createSearchRequestState } from './search-state.js';
 
   function resetButton() {
     btnSearch.classList.remove('searching');
-    btnSearch.querySelector('span').textContent = 'Find Route';
+    btnSearch.querySelector('span').textContent = 'Show routes';
   }
 
   routeForm.addEventListener('submit', (e) => {
