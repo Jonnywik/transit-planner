@@ -160,3 +160,9 @@
 - [x] Add mode-specific road and walking estimate boundaries with no ungrounded duration fallback.
 - [x] Add map-guide status reporting and no-touch capability verification for every estimate/data category.
 - [x] Validate the 390 × 844 fallback experience, commit, and report external provider gates.
+
+## Current Capability Inventory
+
+- [x] Inventory implemented rider, routing, estimate, source-governance, security, and automation capabilities.
+- [x] Classify each capability as available, configuration-gated, advisory-only, demo-only, historical staging-only, or unavailable.
+- [x] Publish and deliver a concise current-capabilities document.
