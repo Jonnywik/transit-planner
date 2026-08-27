@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "status": "DRAFT",
+  "pilotId": "mrt3-north-avenue-taft-avenue",
+  "sources": [
+    {
+      "id": "official-mrt3-gtfs-schedule",
+      "status": "PENDING_APPROVAL",
+      "expectedPurpose": "Static MRT-3 schedule, stop, trip, and calendar data"
+    },
+    {
+      "id": "openstreetmap-mrt3-pedestrian-network",
+      "status": "PENDING_APPROVAL",
+      "expectedPurpose": "Walking access network within the approved pilot boundary"
+    }
+  ],
+  "release": {
+    "otpApiVersion": "PENDING_PINNED_RELEASE",
+    "dataVersion": "PENDING_OFFICIAL_SOURCE_VERSION",
+    "manifestId": "PENDING_APPROVED_MANIFEST",
+    "graphChecksum": "PENDING_APPROVED_GRAPH_CHECKSUM"
+  }
+}

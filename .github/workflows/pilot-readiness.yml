@@ -1,0 +1,44 @@
+name: Pilot routing readiness
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: pilot-routing-readiness
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  assess:
+    name: Automated safe-release assessment
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      NODE_OPTIONS: --unhandled-rejections=strict
+    steps:
+      # v5 — immutable SHA verified on 2026-08-27
+      - name: Check out source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      # v4.4.0 — immutable SHA verified on 2026-08-27
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          check-latest: true
+      - name: Validate controlled artifacts
+        run: npm run validate:pilot && npm run validate:golden
+      - name: Generate readiness report
+        run: npm run pilot:readiness
+      - name: Publish safe readiness summary
+        run: |
+          echo '## Sakay pilot-routing readiness' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo 'This assessment does not fetch transit feeds, build a graph, contact an OTP service, or enable routing.' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat artifacts/pilot-readiness/status.json >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"

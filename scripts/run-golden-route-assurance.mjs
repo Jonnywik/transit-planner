@@ -30,7 +30,14 @@ async function main() {
   if (!validation.ready) throw new Error('Golden-route suite is draft-only. No routing requests were sent; approve the cases against the authoritative graph first.');
   if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) throw new Error('Set SAKAY_BASE_URL to an operator-controlled Sakay service before running approved golden routes.');
 
-  const report = { suiteId: suite.pilotId, runAt: new Date().toISOString(), target: new URL(baseUrl).origin, cases: [] };
+  const report = {
+    suiteId: suite.pilotId,
+    runAt: new Date().toISOString(),
+    target: new URL(baseUrl).origin,
+    manifestId: process.env.SAKAY_GOLDEN_MANIFEST_ID || null,
+    graphChecksum: process.env.SAKAY_GOLDEN_GRAPH_CHECKSUM || null,
+    cases: [],
+  };
   for (const routeCase of suite.cases) {
     if (!routeCase.request?.origin || !routeCase.request?.destination || !routeCase.request?.departureTime) throw new Error(`Approved golden route ${routeCase.id} is missing a complete request.`);
     const response = await fetch(new URL('/api/routes', baseUrl), {
@@ -41,6 +48,7 @@ async function main() {
   }
   report.passed = report.cases.filter((routeCase) => routeCase.passed).length;
   report.failed = report.cases.length - report.passed;
+  report.status = report.failed ? 'FAILED' : 'PASSED';
   await mkdir(dirname(resolve(reportPath)), { recursive: true });
   await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`);
   console.log(`Golden-route assurance complete: ${report.passed}/${report.cases.length} passed. Report: ${reportPath}`);

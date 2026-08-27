@@ -102,3 +102,12 @@
 - [x] Review the repository’s required OTP provenance variables, pilot gates, and validation commands.
 - [x] Prepare a step-by-step configuration and GTFS source-validation guide without enabling live routing.
 - [x] Deliver the implementation checklist and list of approvals still required for a production route service.
+
+## Approved No-Touch Pilot Routing Automation
+
+- [x] Define a non-authorizing machine-readable pilot-source policy and deterministic readiness report.
+- [x] Automate policy validation, source-expiry evaluation, promotion eligibility, and safe blocked-state results.
+- [x] Add unattended scheduled verification that records readiness without downloading unknown feeds or enabling routing.
+- [x] Test blocked, expired, mismatched, and eligible release states; validate and report the remaining external authorization gates.
+
+> The no-touch automation is complete and safely blocked by the absence of authorized source and deployment evidence. It will continue to deny live routing until those machine-verifiable gates are satisfied.

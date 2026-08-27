@@ -1,4 +1,6 @@
 import { buildPilotSource, PilotReadinessError } from './pilot-readiness.js';
+import { readFile } from 'node:fs/promises';
+import { createFileReleaseGate } from './pilot-automation.js';
 
 const OTP_PLAN_CONNECTION_QUERY = `
   query SakayPlanConnection($origin: PlanLabeledLocationInput!, $destination: PlanLabeledLocationInput!, $dateTime: PlanDateTimeInput!, $first: Int!) {
@@ -148,6 +150,7 @@ export function createOtpRoutingProvider({
   dataVersion = process.env.OTP_DATA_VERSION || null,
   dataManifestId = process.env.OTP_DATA_MANIFEST_ID || '',
   supportBoundary = process.env.OTP_SUPPORT_BOUNDARY || '',
+  releaseGate = createFileReleaseGate({ readFile }),
   now = () => new Date().toISOString(),
 } = {}) {
   async function plan(request, acceptLanguage = 'en') {
@@ -164,6 +167,11 @@ export function createOtpRoutingProvider({
         throw new RoutingProviderError(error.message, { status: error.status, code: 'ROUTING_UNAVAILABLE' });
       }
       throw error;
+    }
+
+    const release = await releaseGate();
+    if (!release?.eligible) {
+      throw new RoutingProviderError('Routing service is awaiting an approved automated pilot release.', { status: 503, code: 'ROUTING_UNAVAILABLE' });
     }
 
     let response;
