@@ -33,6 +33,8 @@ import { createSearchRequestState } from './search-state.js';
   const mapEl = document.getElementById('map');
   const resultsPanel = document.getElementById('results-panel');
   const selectPassenger = document.getElementById('select-passenger');
+  const departureTimeInput = document.getElementById('departure-time');
+  const btnDepartNow = document.getElementById('btn-depart-now');
 
   // --- State ---
   let originCoords = null;
@@ -40,6 +42,7 @@ import { createSearchRequestState } from './search-state.js';
   let pwdMode = false;
   let passengerType = 'regular';
   let currentRoutes = null;
+  let currentRouteSource = null;
   let routeLayers = [];
 
   function escapeHtml(value) {
@@ -49,6 +52,7 @@ import { createSearchRequestState } from './search-state.js';
   function showResultsPanel() {
     searchPanel.hidden = true;
     resultsPanel.hidden = false;
+    resultsPanel.classList.remove('results-panel--map-focus');
   }
 
   function closeResultsPanel() {
@@ -56,6 +60,34 @@ import { createSearchRequestState } from './search-state.js';
     searchPanel.hidden = false;
     clearMapLayers();
   }
+
+  function setDepartureTimeNow() {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    departureTimeInput.value = now.toISOString().slice(0, 16);
+  }
+
+  function departureTimeIso() {
+    const selected = new Date(departureTimeInput.value);
+    return Number.isFinite(selected.getTime()) ? selected.toISOString() : new Date().toISOString();
+  }
+
+  function departureTimeLabel() {
+    const selected = new Date(departureTimeInput.value);
+    if (!Number.isFinite(selected.getTime())) return 'Departure time unavailable';
+    return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(selected);
+  }
+
+  function returnToPlanner({ focusDeparture = false } = {}) {
+    closeResultsPanel();
+    if (focusDeparture) requestAnimationFrame(() => departureTimeInput.focus());
+  }
+
+  setDepartureTimeNow();
+  btnDepartNow.addEventListener('click', () => {
+    setDepartureTimeNow();
+    departureTimeInput.focus();
+  });
 
   // =====================
   // MAP INITIALIZATION
@@ -734,9 +766,32 @@ import { createSearchRequestState } from './search-state.js';
   // =====================
   // RESULTS RENDERING
   // =====================
-  function renderAvailabilityState({ title, message, icon = 'ⓘ' }) {
+  function renderSourceDisclosure(source = null) {
+    if (source?.demo) {
+      return `<section class="results-provenance" aria-label="Demo data disclosure">
+        <h3 class="results-provenance__title">Demo fixtures only</h3>
+        <p class="results-provenance__notice">These sample routes are for interface testing and must not be used for travel decisions.</p>
+      </section>`;
+    }
+    if (!source) return '';
+    const fareStatus = source.fareStatus === 'AVAILABLE' ? 'Available from approved source' : 'Unavailable for this pilot';
+    return `<section class="results-provenance" aria-label="Schedule data details">
+      <h3 class="results-provenance__title">Schedule data details</h3>
+      <dl class="results-provenance__grid">
+        <dt>Dataset</dt><dd>${escapeHtml(source.dataVersion || 'Not supplied')}</dd>
+        <dt>Manifest</dt><dd>${escapeHtml(source.manifestId || 'Not supplied')}</dd>
+        <dt>Retrieved</dt><dd>${escapeHtml(source.retrievedAt || 'Not supplied')}</dd>
+        <dt>Coverage</dt><dd>${escapeHtml(source.supportBoundary || 'Not supplied')}</dd>
+        <dt>Fares</dt><dd>${fareStatus}</dd>
+      </dl>
+      <p class="results-provenance__notice">Schedule-only information. Real-time arrivals and fare amounts are not available in this pilot.</p>
+    </section>`;
+  }
+
+  function renderAvailabilityState({ title, message, icon = 'ⓘ', source = null, focusDeparture = false }) {
     showResultsPanel();
     currentRoutes = null;
+    currentRouteSource = source;
     clearMapLayers();
     resultsPanel.innerHTML = `
       <div class="results-header">
@@ -750,12 +805,16 @@ import { createSearchRequestState } from './search-state.js';
         <span class="results-empty__icon" aria-hidden="true">${icon}</span>
         <p>${escapeHtml(title)}</p>
         <p class="results-empty__hint">${escapeHtml(message)}</p>
-      </div>`;
-    resultsPanel.querySelector('#btn-close-results').addEventListener('click', closeResultsPanel);
+        <button type="button" id="btn-adjust-trip" class="results-empty__action">${focusDeparture ? 'Adjust departure time' : 'Edit trip'}</button>
+      </div>
+      ${renderSourceDisclosure(source)}`;
+    resultsPanel.querySelector('#btn-close-results').addEventListener('click', () => returnToPlanner({ focusDeparture }));
+    resultsPanel.querySelector('#btn-adjust-trip').addEventListener('click', () => returnToPlanner({ focusDeparture }));
   }
 
-  function renderResults(routes, source = null) {
+  function renderResults(routes, source = currentRouteSource) {
     showResultsPanel();
+    currentRouteSource = source;
     resultsPanel.innerHTML = '';
 
     if (!routes || !routes.length) {
@@ -770,9 +829,12 @@ import { createSearchRequestState } from './search-state.js';
         <div class="results-empty">
           <span class="results-empty__icon">🔍</span>
           <p>No scheduled route was found between these locations.</p>
-          <p class="results-empty__hint">Try different locations, a different departure time, or a supported area.</p>
-        </div>`;
-      resultsPanel.querySelector('#btn-close-results').addEventListener('click', closeResultsPanel);
+          <p class="results-empty__hint">Try another departure time, different locations, or a journey within the supported area.</p>
+          <button type="button" id="btn-adjust-trip" class="results-empty__action">Adjust departure time</button>
+        </div>
+        ${renderSourceDisclosure(source)}`;
+      resultsPanel.querySelector('#btn-close-results').addEventListener('click', () => returnToPlanner({ focusDeparture: true }));
+      resultsPanel.querySelector('#btn-adjust-trip').addEventListener('click', () => returnToPlanner({ focusDeparture: true }));
       return;
     }
 
@@ -782,19 +844,31 @@ import { createSearchRequestState } from './search-state.js';
     header.innerHTML = `
       <div>
         <h2 class="results-header__title">${routes.length} route${routes.length > 1 ? 's' : ''} found</h2>
-        <p class="results-header__source">${escapeHtml(sourceLabel)}</p>
+        <p class="results-header__source">${escapeHtml(sourceLabel)} · Departing ${escapeHtml(departureTimeLabel())}</p>
       </div>
-      <button id="btn-close-results" class="results-header__close" title="Close results" aria-label="Close results">&times;</button>
+      <div class="results-header__actions">
+        <button id="btn-map-focus" class="results-header__map" type="button" title="Focus selected route on map" aria-pressed="false">Map</button>
+        <button id="btn-close-results" class="results-header__close" title="Close results" aria-label="Close results">&times;</button>
+      </div>
     `;
     resultsPanel.appendChild(header);
 
     header.querySelector('#btn-close-results').addEventListener('click', closeResultsPanel);
+    header.querySelector('#btn-map-focus').addEventListener('click', (event) => {
+      const isFocused = resultsPanel.classList.toggle('results-panel--map-focus');
+      event.currentTarget.textContent = isFocused ? 'Routes' : 'Map';
+      event.currentTarget.setAttribute('aria-pressed', String(isFocused));
+      map.invalidateSize();
+    });
+
+    resultsPanel.insertAdjacentHTML('beforeend', renderSourceDisclosure(source));
 
     routes.forEach((route, index) => {
       const card = document.createElement('div');
       card.className = 'route-card' + (index === 0 ? ' route-card--selected' : '');
       card.setAttribute('role', 'button');
       card.setAttribute('tabindex', '0');
+      card.setAttribute('aria-pressed', String(index === 0));
 
       const transferText = route.transfers === 0 ? 'Direct' : `${route.transfers} transfer${route.transfers > 1 ? 's' : ''}`;
       const modeIcons = [...new Set(route.legs.filter(l => l.mode !== 'WALK').map(l => MODE_ICONS[l.mode] || '🚌'))].join(' ');
@@ -830,7 +904,9 @@ import { createSearchRequestState } from './search-state.js';
 
       card.addEventListener('click', () => {
         document.querySelectorAll('.route-card').forEach((c) => c.classList.remove('route-card--selected'));
+        document.querySelectorAll('.route-card').forEach((c) => c.setAttribute('aria-pressed', 'false'));
         card.classList.add('route-card--selected');
+        card.setAttribute('aria-pressed', 'true');
         drawRouteOnMap(route);
       });
 
@@ -984,7 +1060,10 @@ import { createSearchRequestState } from './search-state.js';
         const marker = L.circleMarker(
           [leg.from.lat, leg.from.lng],
           { radius: 6, fillColor: '#3b82f6', color: '#fff', weight: 2, fillOpacity: 1 }
-        ).addTo(map).bindPopup(`Transfer: ${leg.from.name}`);
+        ).addTo(map);
+        const transferPopup = document.createElement('span');
+        transferPopup.textContent = `Transfer: ${leg.from.name}`;
+        marker.bindPopup(transferPopup);
         routeLayers.push(marker);
       }
     });
@@ -1046,19 +1125,21 @@ import { createSearchRequestState } from './search-state.js';
       if (DEMO_MODE) {
         const routes = generateMockRoutes(originCoords, destinationCoords);
         currentRoutes = routes;
-        renderResults(routes, { demo: true });
+        currentRouteSource = { demo: true };
+        renderResults(routes, currentRouteSource);
         return;
       }
 
       const result = await routingClient.plan({
         origin: { latitude: originCoords[0], longitude: originCoords[1] },
         destination: { latitude: destinationCoords[0], longitude: destinationCoords[1] },
-        departureTime: new Date().toISOString(),
+        departureTime: departureTimeIso(),
         limit: 3,
       });
       currentRoutes = result.itineraries;
+      currentRouteSource = result.source;
       if (result.availability === 'NO_ROUTE') {
-        renderAvailabilityState({ title: 'No scheduled route found.', message: 'Try a different departure time or locations within the supported service area.', icon: '⌕' });
+        renderAvailabilityState({ title: 'No scheduled route found.', message: 'Try a different departure time or locations within the supported service area.', icon: '⌕', source: result.source, focusDeparture: true });
       } else {
         renderResults(result.itineraries, result.source);
       }

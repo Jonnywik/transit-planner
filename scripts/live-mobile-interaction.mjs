@@ -103,9 +103,10 @@ try {
     const sheet = document.getElementById('search-panel');
     const gps = document.getElementById('btn-gps').getBoundingClientRect();
     const search = document.getElementById('btn-search').getBoundingClientRect();
-    return { viewportWidth: window.innerWidth, viewportHeight: window.innerHeight, docked: getComputedStyle(sheet).bottom === '0px', handle: Boolean(document.querySelector('.sheet-handle')), gpsReachable: gps.height >= 34, searchReachable: search.height >= 40 };
+    const departure = document.getElementById('departure-time').getBoundingClientRect();
+    return { viewportWidth: window.innerWidth, viewportHeight: window.innerHeight, docked: getComputedStyle(sheet).bottom === '0px', handle: Boolean(document.querySelector('.sheet-handle')), gpsReachable: gps.height >= 34, searchReachable: search.height >= 40, departureReachable: departure.height >= 40, departureValue: document.getElementById('departure-time').value };
   })()`);
-  if (initialShell.viewportWidth !== 390 || initialShell.viewportHeight !== 844 || !initialShell.docked || !initialShell.handle || !initialShell.gpsReachable || !initialShell.searchReachable) throw new Error(`The mobile bottom-sheet shell or primary touch targets failed their live check: ${JSON.stringify(initialShell)}`);
+  if (initialShell.viewportWidth !== 390 || initialShell.viewportHeight !== 844 || !initialShell.docked || !initialShell.handle || !initialShell.gpsReachable || !initialShell.searchReachable || !initialShell.departureReachable || !initialShell.departureValue) throw new Error(`The mobile bottom-sheet shell or primary touch targets failed their live check: ${JSON.stringify(initialShell)}`);
 
   await client.send('Browser.grantPermissions', { origin: baseUrl, permissions: ['geolocation'] });
   await client.send('Emulation.setGeolocationOverride', { latitude: 14.6424, longitude: 121.0387, accuracy: 10 }, sessionId);
@@ -132,19 +133,25 @@ try {
 
   await enterAndSelect('input-origin', 'Quezon Avenue', 'origin-suggestions');
   await enterAndSelect('input-destination', 'Ayala', 'destination-suggestions');
+  await evaluate(client, sessionId, `(() => { const input = document.getElementById('departure-time'); input.value = '2026-09-01T08:15'; input.dispatchEvent(new Event('change', { bubbles: true })); })()`);
   await evaluate(client, sessionId, `document.getElementById('btn-search').click()`);
   await delay(300);
 
   const routeState = await evaluate(client, sessionId, `(() => {
     const panel = document.getElementById('results-panel');
     const cards = [...document.querySelectorAll('.route-card')];
+    const departureValue = document.getElementById('departure-time').value;
+    const demoDisclosure = document.querySelector('.results-provenance')?.textContent || '';
+    document.getElementById('btn-map-focus').click();
+    const mapFocused = panel.classList.contains('results-panel--map-focus');
+    document.getElementById('btn-map-focus').click();
     const beforeReverse = [document.getElementById('input-origin').value, document.getElementById('input-destination').value];
     document.getElementById('btn-reverse').click();
     const afterReverse = [document.getElementById('input-origin').value, document.getElementById('input-destination').value];
     cards[1]?.click();
-    return { panelVisible: !panel.hidden, plannerHidden: document.getElementById('search-panel').hidden, routes: cards.length, firstSelected: cards[0]?.classList.contains('route-card--selected'), secondSelected: cards[1]?.classList.contains('route-card--selected'), reversed: beforeReverse[0] === afterReverse[1] && beforeReverse[1] === afterReverse[0] };
+    return { panelVisible: !panel.hidden, plannerHidden: document.getElementById('search-panel').hidden, routes: cards.length, firstSelected: cards[0]?.classList.contains('route-card--selected'), secondSelected: cards[1]?.classList.contains('route-card--selected'), reversed: beforeReverse[0] === afterReverse[1] && beforeReverse[1] === afterReverse[0], departureValue, demoDisclosure, mapFocused };
   })()`);
-  if (!routeState.panelVisible || !routeState.plannerHidden || routeState.routes < 2 || !routeState.secondSelected || !routeState.reversed) throw new Error('The live route result, route selection, planner-sheet dismissal, or reverse-trip interaction failed.');
+  if (!routeState.panelVisible || !routeState.plannerHidden || routeState.routes < 2 || !routeState.secondSelected || !routeState.reversed || routeState.departureValue !== '2026-09-01T08:15' || !routeState.demoDisclosure.includes('Demo fixtures only') || !routeState.mapFocused) throw new Error(`The live route result, source disclosure, selected departure, map focus, planner-sheet dismissal, or reverse-trip interaction failed: ${JSON.stringify(routeState)}`);
 
   await client.send('Page.navigate', { url: baseUrl }, sessionId);
   await delay(700);
@@ -157,10 +164,13 @@ try {
       const box = element.getBoundingClientRect();
       return { top: box.top, bottom: box.bottom, text: element.textContent.trim() };
     });
-    return { visible: !document.getElementById('results-panel').hidden, plannerHidden: document.getElementById('search-panel').hidden, text: document.getElementById('results-panel').textContent, paragraphs };
+    const state = { visible: !document.getElementById('results-panel').hidden, plannerHidden: document.getElementById('search-panel').hidden, text: document.getElementById('results-panel').textContent, paragraphs };
+    const recovery = document.getElementById('btn-adjust-trip');
+    recovery?.click();
+    return { ...state, recoveryAvailable: Boolean(recovery), plannerRecovered: !document.getElementById('search-panel').hidden };
   })()`);
   const textOverlaps = unavailableState.paragraphs.some((paragraph, index) => index > 0 && paragraph.top < unavailableState.paragraphs[index - 1].bottom + 6);
-  if (!unavailableState.visible || !unavailableState.plannerHidden || !unavailableState.text.includes('Routing service unavailable.') || textOverlaps) throw new Error(`The unavailable-routing sheet did not render clearly. Paragraph layout: ${JSON.stringify(unavailableState.paragraphs)}`);
+  if (!unavailableState.visible || !unavailableState.plannerHidden || !unavailableState.text.includes('Routing service unavailable.') || !unavailableState.recoveryAvailable || !unavailableState.plannerRecovered || textOverlaps) throw new Error(`The unavailable-routing sheet did not render clearly or recover to the planner. Paragraph layout: ${JSON.stringify(unavailableState.paragraphs)}`);
 
   const screenshotPath = resolve(outputDir, 'mobile-route-result.png');
   await client.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false }, sessionId).then(async ({ data }) => {
@@ -170,7 +180,7 @@ try {
   const screenshot = await stat(screenshotPath);
   if (screenshot.size < 5_000) throw new Error('The live mobile interaction screenshot is unexpectedly small.');
 
-  console.log(`Live mobile interaction smoke passed: bottom sheet, GPS selection, real geocoding selections, demo route results, route selection, reverse trip, and truthful unavailable-routing state. Artifact: ${screenshotPath} (${screenshot.size} bytes)`);
+  console.log(`Live mobile interaction smoke passed: bottom sheet, departure time, GPS selection, real geocoding selections, demo disclosure, route selection, map focus, reverse trip, and truthful unavailable-routing recovery. Artifact: ${screenshotPath} (${screenshot.size} bytes)`);
 } finally {
   client?.close();
   chrome.kill('SIGTERM');

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "status": "DRAFT",
+  "pilotId": "mrt3-north-avenue-taft-avenue",
+  "cases": [
+    { "id": "direct-northbound-am-01", "status": "PENDING_APPROVAL", "scenario": "direct", "originRef": "OFFICIAL_STOP_ID_PENDING", "destinationRef": "OFFICIAL_STOP_ID_PENDING", "riderOutcome": "Schedule route uses the approved northbound service." },
+    { "id": "direct-northbound-midday-02", "status": "PENDING_APPROVAL", "scenario": "direct", "originRef": "OFFICIAL_STOP_ID_PENDING", "destinationRef": "OFFICIAL_STOP_ID_PENDING", "riderOutcome": "Schedule route uses the approved northbound service." },
+    { "id": "direct-northbound-evening-03", "status": "PENDING_APPROVAL", "scenario": "direct", "originRef": "OFFICIAL_STOP_ID_PENDING", "destinationRef": "OFFICIAL_STOP_ID_PENDING", "riderOutcome": "Schedule route uses the approved northbound service." },
+    { "id": "direct-southbound-am-04", "status": "PENDING_APPROVAL", "scenario": "direct", "originRef": "OFFICIAL_STOP_ID_PENDING", "destinationRef": "OFFICIAL_STOP_ID_PENDING", "riderOutcome": "Schedule route uses the approved southbound service." },
+    { "id": "direct-southbound-midday-05", "status": "PENDING_APPROVAL", "scenario": "direct", "originRef": "OFFICIAL_STOP_ID_PENDING", "destinationRef": "OFFICIAL_STOP_ID_PENDING", "riderOutcome": "Schedule route uses the approved southbound service." },
+    { "id": "direct-southbound-evening-06", "status": "PENDING_APPROVAL", "scenario": "direct", "originRef": "OFFICIAL_STOP_ID_PENDING", "destinationRef": "OFFICIAL_STOP_ID_PENDING", "riderOutcome": "Schedule route uses the approved southbound service." },
+    { "id": "direct-first-service-07", "status": "PENDING_APPROVAL", "scenario": "direct", "originRef": "OFFICIAL_STOP_ID_PENDING", "destinationRef": "OFFICIAL_STOP_ID_PENDING", "riderOutcome": "Earliest supported service is correctly available or unavailable." },
+    { "id": "direct-last-service-08", "status": "PENDING_APPROVAL", "scenario": "direct", "originRef": "OFFICIAL_STOP_ID_PENDING", "destinationRef": "OFFICIAL_STOP_ID_PENDING", "riderOutcome": "Latest supported service is correctly available or unavailable." },
+    { "id": "transfer-feeder-north-09", "status": "PENDING_APPROVAL", "scenario": "transfer", "originRef": "OFFICIAL_STOP_ID_PENDING", "destinationRef": "OFFICIAL_STOP_ID_PENDING", "riderOutcome": "Approved feeder transfer is presented with correct interchange guidance." },
+    { "id": "transfer-feeder-south-10", "status": "PENDING_APPROVAL", "scenario": "transfer", "originRef": "OFFICIAL_STOP_ID_PENDING", "destinationRef": "OFFICIAL_STOP_ID_PENDING", "riderOutcome": "Approved feeder transfer is presented with correct interchange guidance." },
+    { "id": "transfer-time-peak-11", "status": "PENDING_APPROVAL", "scenario": "transfer", "originRef": "OFFICIAL_STOP_ID_PENDING", "destinationRef": "OFFICIAL_STOP_ID_PENDING", "riderOutcome": "Transfer time meets the validated schedule policy." },
+    { "id": "transfer-time-offpeak-12", "status": "PENDING_APPROVAL", "scenario": "transfer", "originRef": "OFFICIAL_STOP_ID_PENDING", "destinationRef": "OFFICIAL_STOP_ID_PENDING", "riderOutcome": "Transfer time meets the validated schedule policy." },
+    { "id": "walking-access-north-13", "status": "PENDING_APPROVAL", "scenario": "walking_access", "originRef": "COORDINATE_PENDING_APPROVED_BOUNDARY", "destinationRef": "OFFICIAL_STOP_ID_PENDING", "riderOutcome": "Walking access is within the approved pilot buffer." },
+    { "id": "walking-access-south-14", "status": "PENDING_APPROVAL", "scenario": "walking_access", "originRef": "COORDINATE_PENDING_APPROVED_BOUNDARY", "destinationRef": "OFFICIAL_STOP_ID_PENDING", "riderOutcome": "Walking access is within the approved pilot buffer." },
+    { "id": "walking-access-distance-15", "status": "PENDING_APPROVAL", "scenario": "walking_access", "originRef": "COORDINATE_PENDING_APPROVED_BOUNDARY", "destinationRef": "OFFICIAL_STOP_ID_PENDING", "riderOutcome": "Walking distance follows the approved maximum walk policy." },
+    { "id": "no-route-outside-hours-16", "status": "PENDING_APPROVAL", "scenario": "no_route", "originRef": "OFFICIAL_STOP_ID_PENDING", "destinationRef": "OFFICIAL_STOP_ID_PENDING", "riderOutcome": "No route is returned outside validated service hours." },
+    { "id": "no-route-unsupported-mode-17", "status": "PENDING_APPROVAL", "scenario": "no_route", "originRef": "OFFICIAL_STOP_ID_PENDING", "destinationRef": "OFFICIAL_STOP_ID_PENDING", "riderOutcome": "No route is returned when the requested journey requires an unsupported mode." },
+    { "id": "pilot-boundary-north-18", "status": "PENDING_APPROVAL", "scenario": "pilot_boundary", "originRef": "COORDINATE_PENDING_APPROVED_BOUNDARY", "destinationRef": "OFFICIAL_STOP_ID_PENDING", "riderOutcome": "Boundary recovery explains the supported pilot area." },
+    { "id": "pilot-boundary-south-19", "status": "PENDING_APPROVAL", "scenario": "pilot_boundary", "originRef": "OFFICIAL_STOP_ID_PENDING", "destinationRef": "COORDINATE_PENDING_APPROVED_BOUNDARY", "riderOutcome": "Boundary recovery explains the supported pilot area." },
+    { "id": "pilot-boundary-outside-20", "status": "PENDING_APPROVAL", "scenario": "pilot_boundary", "originRef": "COORDINATE_PENDING_APPROVED_BOUNDARY", "destinationRef": "COORDINATE_PENDING_APPROVED_BOUNDARY", "riderOutcome": "Outside-pilot requests do not produce a misleading route." }
+  ]
+}

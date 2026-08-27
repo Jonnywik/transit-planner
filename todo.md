@@ -79,3 +79,13 @@
 - [x] Validate all Sprint 0 controls, commit the result, and identify approvals required before live routing.
 
 > Sprint 0 implementation controls are complete. The Sprint 0 exit gate remains pending the documented data-rights, source-validity, graph, golden-route, accessibility, and operational approvals in `docs/PILOT_DATA_GOVERNANCE.md`.
+
+## Approved Sprint 1 — Static Journey-Planning Pilot
+
+- [x] Add reproducible pilot graph configuration, input-manifest validation, and a documented local routing service contract.
+- [x] Add golden-route fixture coverage for direct, transfer, walking, no-route, and pilot-boundary schedule journeys.
+- [x] Surface source, data version, retrieval time, support boundary, and fare availability in route results.
+- [x] Add mobile journey departure date/time control, improved no-route recovery, and map/route synchronization.
+- [x] Validate the pilot implementation without enabling unapproved live routing, then commit and report pending data approvals.
+
+> Sprint 1 implementation is complete. The static journey-planning pilot remains **not live** until the data-rights, source-validity, reproducible-graph, golden-route, and operational approval gates documented in `docs/PILOT_DATA_GOVERNANCE.md` are completed.

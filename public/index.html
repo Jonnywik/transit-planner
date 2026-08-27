@@ -108,6 +108,18 @@
           </div>
         </div>
 
+        <div class="journey-time">
+          <div>
+            <label for="departure-time" class="journey-time__label">Leaving at</label>
+            <p class="journey-time__hint">Schedules are checked for this local date and time.</p>
+          </div>
+          <div class="journey-time__control">
+            <input type="datetime-local" id="departure-time" class="journey-time__input" aria-describedby="departure-time-help" required>
+            <button type="button" id="btn-depart-now" class="journey-time__now">Now</button>
+          </div>
+          <span id="departure-time-help" class="sr-only">Choose the local date and time you plan to leave.</span>
+        </div>
+
         <div class="route-form__footer">
           <div class="passenger-type" id="passenger-type-group">
             <label for="select-passenger" class="passenger-type__label">Fare type</label>

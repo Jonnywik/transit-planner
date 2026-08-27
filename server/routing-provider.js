@@ -1,3 +1,5 @@
+import { buildPilotSource, PilotReadinessError } from './pilot-readiness.js';
+
 const OTP_PLAN_CONNECTION_QUERY = `
   query SakayPlanConnection($origin: PlanLabeledLocationInput!, $destination: PlanLabeledLocationInput!, $dateTime: PlanDateTimeInput!, $first: Int!) {
     planConnection(origin: $origin, destination: $destination, dateTime: $dateTime, first: $first) {
@@ -144,12 +146,24 @@ export function createOtpRoutingProvider({
   endpoint = process.env.OTP_GRAPHQL_URL || '',
   otpVersion = process.env.OTP_API_VERSION || '',
   dataVersion = process.env.OTP_DATA_VERSION || null,
+  dataManifestId = process.env.OTP_DATA_MANIFEST_ID || '',
+  supportBoundary = process.env.OTP_SUPPORT_BOUNDARY || '',
   now = () => new Date().toISOString(),
 } = {}) {
   async function plan(request, acceptLanguage = 'en') {
     const validated = validateRouteRequest(request);
     if (!endpoint || !otpVersion) {
       throw new RoutingProviderError('Routing service is not configured. This prototype cannot provide live journey guidance yet.', { status: 503, code: 'ROUTING_UNAVAILABLE' });
+    }
+
+    let source;
+    try {
+      source = buildPilotSource({ otpVersion, dataVersion, manifestId: dataManifestId, supportBoundary, now });
+    } catch (error) {
+      if (error instanceof PilotReadinessError) {
+        throw new RoutingProviderError(error.message, { status: error.status, code: 'ROUTING_UNAVAILABLE' });
+      }
+      throw error;
     }
 
     let response;
@@ -188,13 +202,7 @@ export function createOtpRoutingProvider({
     return {
       availability: itineraries.length ? 'READY' : 'NO_ROUTE',
       itineraries,
-      source: {
-        provider: 'OpenTripPlanner',
-        apiVersion: otpVersion,
-        dataVersion,
-        retrievedAt: now(),
-        status: 'schedule',
-      },
+      source,
     };
   }
 

@@ -35,6 +35,8 @@ jobs:
         run: node --version && npm --version
       - name: Run native test coverage
         run: npm run coverage
+      - name: Validate pilot routing artifacts
+        run: npm run validate:pilot && npm run validate:golden
       - name: Check JavaScript syntax
         run: npm run check
       - name: Run mobile visual smoke check

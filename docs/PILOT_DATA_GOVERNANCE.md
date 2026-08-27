@@ -36,6 +36,8 @@ The historical `sakayph/gtfs` repository describes itself as a Metro Manila jeep
 
 Each graph build must commit or store an immutable manifest outside public web delivery. The manifest must include the following fields.
 
+Sprint 1 provides a structurally validated, deliberately draft manifest at `data/pilot/pilot-manifest.draft.json` and a 20-case draft assurance catalog at `data/pilot/golden-routes.draft.json`. These files contain no feed rows, stop IDs, route geometry, or authorized schedule data. Their `DRAFT`/`PENDING_APPROVAL` status prevents them from authorizing live rider guidance.
+
 | Field | Example | Why it is mandatory |
 |---|---|---|
 | `source_id` | `mrt3_schedule_2026_09_01` | Stable identity for support and incident investigation. |

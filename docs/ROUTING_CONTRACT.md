@@ -12,9 +12,11 @@ The service requires all of the following deployment-time values before it can r
 |---|---|---|
 | `OTP_GRAPHQL_URL` | `https://otp.example.org/graphql` | Full GraphQL endpoint for the selected OTP deployment. |
 | `OTP_API_VERSION` | `2.9.0` | Explicit deployed OTP version, shown in route provenance. |
-| `OTP_DATA_VERSION` | `metro-manila-2026-08-01` | Optional version/checksum label for the active static routing graph. |
+| `OTP_DATA_VERSION` | `metro-manila-2026-08-01` | Approved source version or effective date for the active static routing graph. |
+| `OTP_DATA_MANIFEST_ID` | `mrt3-2026-08-01-release-a` | Immutable approved source-manifest identity for rider disclosure and incident review. |
+| `OTP_SUPPORT_BOUNDARY` | `MRT-3 pilot corridor only` | Rider-visible support boundary tied to the approved graph. |
 
-When either required OTP value is absent, the route endpoint returns `503 ROUTING_UNAVAILABLE`; it never falls back to generated itineraries. This is intentional, because the current repository has no validated Metro Manila GTFS/OSM graph.
+When any routing or provenance value is absent, the route endpoint returns `503 ROUTING_UNAVAILABLE`; it never falls back to generated itineraries. This is intentional, because the current repository has no validated Metro Manila GTFS/OSM graph.
 
 ## Endpoint
 
@@ -29,7 +31,7 @@ When either required OTP value is absent, the route endpoint returns `503 ROUTIN
 }
 ```
 
-The response contains `availability`, an itinerary array, and source metadata. `READY` means schedule itineraries were returned. `NO_ROUTE` means the configured OTP instance returned an empty itinerary connection. `ROUTING_UNAVAILABLE` is an explicit non-success response that conveys configuration or provider availability failure.
+The response contains `availability`, an itinerary array, and source metadata. `READY` means schedule itineraries were returned. `NO_ROUTE` means the configured OTP instance returned an empty itinerary connection. `ROUTING_UNAVAILABLE` is an explicit non-success response that conveys configuration, provenance, or provider availability failure. Successful source metadata includes the provider, API version, data version, manifest identifier, retrieval time, support boundary, schedule status, and `fareStatus: "UNAVAILABLE"`.
 
 ## Provider query and normalization
 
@@ -39,7 +41,7 @@ The OTP GraphQL tutorial documents `planConnection` for routing results and OTP�
 
 ## Operational verification before enablement
 
-Before setting the environment variables, the team must build a versioned graph from validated Metro Manila GTFS and OpenStreetMap inputs, verify GraphQL queries in the deployment’s GraphiQL interface, create a golden-route suite for the first supported corridor, and record the graph version in `OTP_DATA_VERSION`. A successful HTTP response alone is not proof of itinerary correctness.
+Before setting the environment variables, the team must validate the draft manifest and golden-route catalog, build a versioned graph from validated Metro Manila GTFS and OpenStreetMap inputs, verify GraphQL queries in the deployment’s GraphiQL interface, approve the 20-case golden-route suite for the first supported corridor, and record the graph version in `OTP_DATA_VERSION`. A successful HTTP response alone is not proof of itinerary correctness. See `docs/PILOT_ROUTING_RUNBOOK.md` for the controlled promotion sequence.
 
 ## References
 
