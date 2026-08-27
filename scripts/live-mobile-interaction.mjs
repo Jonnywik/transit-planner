@@ -167,11 +167,19 @@ try {
   const mrt3Reference = await evaluate(client, sessionId, `(() => {
     const panel = document.getElementById('results-panel');
     const officialLink = panel.querySelector('.reference-card__link');
-    const state = { visible: !panel.hidden, text: panel.textContent, officialLink: officialLink ? { href: officialLink.href, target: officialLink.target, rel: officialLink.rel } : null };
-    document.getElementById('btn-close-results').click();
-    return { ...state, plannerRecovered: !document.getElementById('search-panel').hidden };
+    const badge = panel.querySelector('.reference-card__status');
+    const state = { visible: !panel.hidden, text: panel.textContent, badgeText: badge?.textContent || '', officialLink: officialLink ? { href: officialLink.href, target: officialLink.target, rel: officialLink.rel, height: officialLink.getBoundingClientRect().height } : null };
+    return state;
   })()`);
-  if (!mrt3Reference.visible || !mrt3Reference.text.includes('Scheduled service reference') || !mrt3Reference.text.includes('3.5 min') || !mrt3Reference.text.includes('not a station arrival') || !mrt3Reference.officialLink?.href.includes('dotrmrt3.gov.ph') || mrt3Reference.officialLink.target !== '_blank' || !mrt3Reference.officialLink.rel.includes('noopener') || !mrt3Reference.plannerRecovered) throw new Error(`The MRT-3 scheduled reference was not clearly labeled, source-linked, or recoverable: ${JSON.stringify(mrt3Reference)}`);
+  if (!mrt3Reference.visible || !mrt3Reference.text.includes('Scheduled service reference') || !mrt3Reference.text.includes('3.5 min') || !mrt3Reference.text.includes('not a station arrival') || !mrt3Reference.badgeText.includes('not live') || !mrt3Reference.officialLink?.href.includes('dotrmrt3.gov.ph') || mrt3Reference.officialLink.target !== '_blank' || !mrt3Reference.officialLink.rel.includes('noopener') || mrt3Reference.officialLink.height < 44) throw new Error(`The MRT-3 scheduled reference was not clearly labeled, source-linked, or thumb-reachable: ${JSON.stringify(mrt3Reference)}`);
+  const scheduleScreenshotPath = resolve(outputDir, 'mobile-mrt3-schedule-reference.png');
+  await client.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false }, sessionId).then(async ({ data }) => {
+    await (await import('node:fs/promises')).writeFile(scheduleScreenshotPath, Buffer.from(data, 'base64'));
+  });
+  await access(scheduleScreenshotPath, constants.R_OK);
+  if ((await stat(scheduleScreenshotPath)).size < 5_000) throw new Error('The MRT-3 schedule-reference screenshot is unexpectedly small.');
+  const scheduleRecovered = await evaluate(client, sessionId, `(() => { document.getElementById('btn-close-results').click(); return !document.getElementById('search-panel').hidden; })()`);
+  if (!scheduleRecovered) throw new Error('The MRT-3 scheduled reference did not return the rider to the planner.');
   await evaluate(client, sessionId, `(() => { const input = document.getElementById('departure-time'); input.value = '2026-08-24T02:00'; input.dispatchEvent(new Event('change', { bubbles: true })); document.getElementById('btn-mrt3-reference').click(); })()`);
   await delay(200);
   const mrt3BeforeService = await evaluate(client, sessionId, `(() => {
@@ -196,21 +204,28 @@ try {
   const walkingEtaUnavailable = await evaluate(client, sessionId, `(() => {
     const panel = document.getElementById('results-panel');
     const handoff = document.getElementById('btn-external-directions-handoff');
-    const state = { visible: !panel.hidden, text: panel.textContent, handoff: handoff ? { href: handoff.href, target: handoff.target, rel: handoff.rel } : null };
-    document.getElementById('btn-adjust-trip')?.click();
-    return { ...state, plannerRecovered: !document.getElementById('search-panel').hidden };
+    const state = { visible: !panel.hidden, text: panel.textContent, handoff: handoff ? { href: handoff.href, target: handoff.target, rel: handoff.rel, height: handoff.getBoundingClientRect().height, width: handoff.getBoundingClientRect().width } : null };
+    return state;
   })()`);
-  if (!walkingEtaUnavailable.visible || !walkingEtaUnavailable.text.includes('Walking ETA unavailable.') || !walkingEtaUnavailable.handoff?.href.includes('travelmode=walking') || walkingEtaUnavailable.handoff.target !== '_blank' || !walkingEtaUnavailable.handoff.rel.includes('noopener') || !walkingEtaUnavailable.plannerRecovered) throw new Error(`The unconfigured walking-ETA path did not preserve its external recovery option: ${JSON.stringify(walkingEtaUnavailable)}`);
+  if (!walkingEtaUnavailable.visible || !walkingEtaUnavailable.text.includes('Walking ETA unavailable.') || !walkingEtaUnavailable.handoff?.href.includes('travelmode=walking') || walkingEtaUnavailable.handoff.target !== '_blank' || !walkingEtaUnavailable.handoff.rel.includes('noopener') || walkingEtaUnavailable.handoff.height < 44 || walkingEtaUnavailable.handoff.width < 280) throw new Error(`The unconfigured walking-ETA path did not preserve a thumb-reachable external recovery option: ${JSON.stringify(walkingEtaUnavailable)}`);
+  const walkingFallbackScreenshotPath = resolve(outputDir, 'mobile-walking-fallback.png');
+  await client.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false }, sessionId).then(async ({ data }) => {
+    await (await import('node:fs/promises')).writeFile(walkingFallbackScreenshotPath, Buffer.from(data, 'base64'));
+  });
+  await access(walkingFallbackScreenshotPath, constants.R_OK);
+  if ((await stat(walkingFallbackScreenshotPath)).size < 5_000) throw new Error('The walking-fallback screenshot is unexpectedly small.');
+  const walkingRecovered = await evaluate(client, sessionId, `(() => { document.getElementById('btn-adjust-trip')?.click(); return !document.getElementById('search-panel').hidden; })()`);
+  if (!walkingRecovered) throw new Error('The walking fallback did not return the rider to the planner.');
   await evaluate(client, sessionId, `document.getElementById('btn-road-eta').click()`);
   await delay(500);
   const roadEtaUnavailable = await evaluate(client, sessionId, `(() => {
     const panel = document.getElementById('results-panel');
     const handoff = document.getElementById('btn-external-directions-handoff');
-    const state = { visible: !panel.hidden, text: panel.textContent, handoff: handoff ? { href: handoff.href, target: handoff.target, rel: handoff.rel } : null };
+    const state = { visible: !panel.hidden, text: panel.textContent, handoff: handoff ? { href: handoff.href, target: handoff.target, rel: handoff.rel, height: handoff.getBoundingClientRect().height, width: handoff.getBoundingClientRect().width } : null };
     document.getElementById('btn-adjust-trip')?.click();
     return { ...state, plannerRecovered: !document.getElementById('search-panel').hidden };
   })()`);
-  if (!roadEtaUnavailable.visible || !roadEtaUnavailable.text.includes('Traffic-aware road ETA unavailable.') || !roadEtaUnavailable.handoff?.href.includes('travelmode=driving') || roadEtaUnavailable.handoff.target !== '_blank' || !roadEtaUnavailable.handoff.rel.includes('noopener') || !roadEtaUnavailable.plannerRecovered) throw new Error(`The unconfigured road-ETA path did not preserve its external recovery option: ${JSON.stringify(roadEtaUnavailable)}`);
+  if (!roadEtaUnavailable.visible || !roadEtaUnavailable.text.includes('Traffic-aware road ETA unavailable.') || !roadEtaUnavailable.handoff?.href.includes('travelmode=driving') || roadEtaUnavailable.handoff.target !== '_blank' || !roadEtaUnavailable.handoff.rel.includes('noopener') || roadEtaUnavailable.handoff.height < 44 || roadEtaUnavailable.handoff.width < 280 || !roadEtaUnavailable.plannerRecovered) throw new Error(`The unconfigured road-ETA path did not preserve a thumb-reachable external recovery option: ${JSON.stringify(roadEtaUnavailable)}`);
   await evaluate(client, sessionId, `document.getElementById('btn-search').click()`);
   await delay(600);
   const unavailableState = await evaluate(client, sessionId, `(() => {
@@ -235,7 +250,7 @@ try {
   const screenshot = await stat(screenshotPath);
   if (screenshot.size < 5_000) throw new Error('The live mobile interaction screenshot is unexpectedly small.');
 
-  console.log(`Live mobile interaction smoke passed: bottom sheet, departure time, GPS selection, real geocoding selections, demo disclosure, route selection, map focus, distinct walking/driving estimate recovery, reverse trip, and truthful external transit handoff. Artifact: ${screenshotPath} (${screenshot.size} bytes)`);
+  console.log(`Live mobile interaction smoke passed: bottom sheet, departure time, GPS selection, real geocoding selections, demo disclosure, route selection, map focus, distinct walking/driving estimate recovery, reverse trip, and truthful external transit handoff. Artifacts: ${scheduleScreenshotPath}, ${walkingFallbackScreenshotPath}, ${screenshotPath} (${screenshot.size} bytes)`);
 } finally {
   client?.close();
   chrome.kill('SIGTERM');

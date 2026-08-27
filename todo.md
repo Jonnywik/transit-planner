@@ -195,3 +195,10 @@
 - [x] Expand MRT-3 scheduled-reference guidance for before-service, current-service, and after-service time windows without creating arrival claims.
 - [x] Implement and test approved guidance and provider-first fallback improvements.
 - [x] Complete end-to-end validation, commit, and report the active in-app versus external fallback states.
+
+## Capability Readiness Review and Mobile Guidance Refinement
+
+- [x] Reassess remaining non-operational capabilities and identify the next feasible implementation step without assuming unavailable external inputs.
+- [x] Produce a full production-readiness test summary for all current feature classes and release gates.
+- [x] Optimize mobile MRT-3 schedule guidance and external fallback-link components for hierarchy, touch targets, and disclosure clarity.
+- [x] Complete responsive validation, commit, and report readiness plus the next external dependency.

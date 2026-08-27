@@ -884,8 +884,8 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
         <span class="results-empty__icon" aria-hidden="true">!</span>
         <p>${escapeHtml(message)}</p>
         <p class="results-empty__hint">Google Maps determines any external route and time. Sakay does not import, verify, or cache the provider result.</p>
-        ${handoffUrl ? `<a id="btn-external-directions-handoff" class="results-empty__action" target="_blank" rel="noopener noreferrer">${escapeHtml(actionLabel)}</a>` : ''}
-        <button type="button" id="btn-adjust-trip" class="results-empty__action">Edit trip</button>
+        ${handoffUrl ? `<a id="btn-external-directions-handoff" class="results-empty__action results-empty__action--external" target="_blank" rel="noopener noreferrer">${escapeHtml(actionLabel)} <span aria-hidden="true">↗</span></a>` : ''}
+        <button type="button" id="btn-adjust-trip" class="results-empty__action results-empty__action--secondary">Edit trip</button>
       </div>`;
     resultsPanel.querySelector('#btn-close-results').addEventListener('click', returnToPlanner);
     resultsPanel.querySelector('#btn-adjust-trip').addEventListener('click', returnToPlanner);
@@ -985,8 +985,8 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
         <span class="results-empty__icon" aria-hidden="true">!</span>
         <p>Sakay cannot calculate a verified transit itinerary, next-train time, or vehicle arrival without a governed schedule source.</p>
         <p class="results-empty__hint">${handoffUrl ? 'You can open these selected locations in Google Maps for its own transit directions. Sakay does not import or verify that provider’s route or time.' : 'Select an origin and destination to open them in an external transit-direction provider, or use a separate walking or driving estimate.'}</p>
-        ${handoffUrl ? '<a id="btn-google-transit-handoff" class="results-empty__action" target="_blank" rel="noopener noreferrer">Open transit options</a>' : ''}
-        <button type="button" id="btn-adjust-trip" class="results-empty__action">Edit trip</button>
+        ${handoffUrl ? '<a id="btn-google-transit-handoff" class="results-empty__action results-empty__action--external" target="_blank" rel="noopener noreferrer">Open transit options <span aria-hidden="true">↗</span></a>' : ''}
+        <button type="button" id="btn-adjust-trip" class="results-empty__action results-empty__action--secondary">Edit trip</button>
       </div>`;
     resultsPanel.querySelector('#btn-close-results').addEventListener('click', returnToPlanner);
     resultsPanel.querySelector('#btn-adjust-trip').addEventListener('click', returnToPlanner);
@@ -1005,12 +1005,13 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
       : `<p class="reference-card__value">${reference.availability === 'BEFORE_PUBLISHED_SERVICE_WINDOW' ? 'Before published service window' : 'After published service window'}</p><p class="reference-card__detail">${escapeHtml(reference.serviceDay)} published system window ${escapeHtml(reference.serviceWindow)}</p>`;
     resultsPanel.innerHTML = `
       <div class="results-header"><div><p class="eyebrow">MRT-3</p><h2 class="results-header__title">Scheduled service reference</h2></div><button id="btn-close-results" class="results-header__close" title="Edit trip" aria-label="Edit trip">&times;</button></div>
-      <section class="reference-card" aria-label="MRT-3 scheduled service reference">
+      <section class="reference-card reference-card--schedule" aria-label="MRT-3 scheduled service reference">
         <p class="reference-card__eyebrow">${escapeHtml(reference.sourceLabel)}</p>
+        <span class="reference-card__status">Scheduled reference · not live</span>
         ${referenceDetail}
         <p class="reference-card__detail">${escapeHtml(reference.guidance)}</p>
         <p class="reference-card__notice">${escapeHtml(reference.limitation)}</p>
-        <a class="reference-card__link" href="${escapeHtml(reference.sourceUrl)}" target="_blank" rel="noopener noreferrer">View official MRT-3 schedule</a>
+        <a class="reference-card__link reference-card__link--external" href="${escapeHtml(reference.sourceUrl)}" target="_blank" rel="noopener noreferrer">View official MRT-3 schedule <span aria-hidden="true">↗</span></a>
       </section>`;
     resultsPanel.querySelector('#btn-close-results').addEventListener('click', returnToPlanner);
   }

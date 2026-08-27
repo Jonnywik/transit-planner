@@ -146,10 +146,16 @@ button:focus-visible, input:focus-visible, select:focus-visible, [role="button"]
 .results-panel--map-focus { max-height: 104px; overflow: hidden; }
 .results-panel--map-focus .results-provenance, .results-panel--map-focus .route-card { display: none; }
 .results-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 30px 14px; color: var(--ink); text-align: center; }
+.results-empty--status { align-items: stretch; padding: 18px 4px 8px; text-align: left; }
+.results-empty--status .results-empty__icon { align-self: flex-start; margin: 0 0 3px; }
+.results-empty--status .results-empty__hint { max-width: none; }
 .results-empty p { margin: 0; }
 .results-empty__icon { display: grid; width: 46px; height: 46px; margin: 0 auto 12px; place-items: center; color: var(--red); background: #fbe8e9; border-radius: 15px; font-size: 23px; }
 .results-empty__hint { max-width: 280px; color: var(--muted); font-size: 12px; line-height: 1.45; }
-.results-empty__action { min-height: 40px; margin-top: 5px; padding: 0 13px; color: #fff; background: var(--blue); border: 1px solid var(--blue); border-radius: 10px; cursor: pointer; font-size: 12px; font-weight: 800; }
+.results-empty__action { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; margin-top: 2px; padding: 0 13px; color: #fff; background: var(--blue); border: 1px solid var(--blue); border-radius: 10px; cursor: pointer; font-size: 12px; font-weight: 800; text-decoration: none; }
+.results-empty__action--external { box-shadow: 0 7px 14px rgba(18,63,115,.16); }
+.results-empty__action--secondary { color: var(--blue); background: transparent; border-color: rgba(18,63,115,.24); box-shadow: none; }
+.results-empty__action--secondary:hover { background: #eaf0f6; }
 .road-eta-card { display: grid; gap: 11px; margin: 0 0 10px; padding: 16px; color: var(--ink); background: var(--paper-strong); border: 1px solid var(--line); border-radius: 16px; }
 .road-eta-card__eyebrow { margin: 0; color: var(--blue); font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; }
 .road-eta-card__duration { margin: 0; color: var(--ink); font-size: 32px; font-weight: 800; letter-spacing: -.06em; line-height: .95; }
@@ -157,11 +163,15 @@ button:focus-visible, input:focus-visible, select:focus-visible, [role="button"]
 .road-eta-card__traffic { display: inline-flex; width: fit-content; padding: 5px 8px; color: #815918; background: #fff5d9; border: 1px solid #efd49e; border-radius: 8px; font-family: var(--font-mono); font-size: 10px; font-weight: 500; }
 .road-eta-card__notice { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
 .reference-card { display: grid; gap: 11px; margin: 0 0 10px; padding: 14px; color: var(--ink); background: var(--paper-strong); border: 1px solid var(--line); border-radius: 16px; }
+.reference-card--schedule { gap: 10px; border-top: 3px solid var(--blue); }
 .reference-card__eyebrow { margin: 0; color: var(--blue); font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; }
+.reference-card__status { width: fit-content; padding: 4px 7px; color: #815918; background: #fff5d9; border: 1px solid #efd49e; border-radius: 6px; font-family: var(--font-mono); font-size: 9px; font-weight: 500; line-height: 1.2; }
 .reference-card__value { margin: 0; color: var(--blue-deep); font-size: 24px; font-weight: 800; letter-spacing: -.05em; }
 .reference-card__detail, .reference-card__notice { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
 .reference-card__notice { padding: 9px 10px; color: #815918; background: #fff5d9; border-radius: 9px; }
 .reference-card__link { color: var(--blue); font-size: 11px; font-weight: 800; }
+.reference-card__link--external { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 0 12px; color: #fff; background: var(--blue); border: 1px solid var(--blue); border-radius: 10px; box-shadow: 0 7px 14px rgba(18,63,115,.16); text-decoration: none; }
+.reference-card__link--external:hover { background: var(--blue-deep); }
 .fare-notice { width: 100%; max-height: 360px; object-fit: contain; object-position: top; background: #fff; border: 1px solid var(--line); border-radius: 10px; }
 .route-card { position: relative; margin: 0 0 9px; padding: 15px; overflow: hidden; background: var(--paper-strong); border: 1px solid var(--line); border-radius: 16px; cursor: pointer; transition: border-color 180ms var(--ease-out), transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out); }
 .route-card::before { position: absolute; top: 0; bottom: 0; left: 0; width: 4px; content: ''; background: var(--blue); opacity: .15; }
@@ -219,6 +229,13 @@ body.pwd-mode .route-card, body.pwd-mode .input-group__wrapper, body.pwd-mode .p
 @keyframes fade-slide { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }
+
+@media (max-width: 420px) {
+  .results-panel { max-height: min(72dvh, 620px); padding-right: 14px; padding-left: 14px; }
+  .results-header { padding-bottom: 10px; }
+  .results-header__title { font-size: 17px; }
+  .reference-card__value { font-size: 22px; }
+}
 
 @media (min-width: 720px) {
   .map-container { background-image: url('https://3000-itph7nc61pkgr18fbw6gh-aca06218.sg1.manus.computer/manus-storage/sakay-desktop-ribbon-field_dee80a8f.jpg'); }
