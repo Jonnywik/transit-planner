@@ -12,6 +12,8 @@ When Sakay does not have a current, rights-cleared GTFS Schedule source, it now 
 |---|---|---|---|---|
 | Driving | Traffic-aware driving estimate | Authorized Google Routes API configuration | `ROAD_ETA_UNAVAILABLE` | Bus/jeepney/train time, total transit journey, confirmed closure |
 | Walking | Network walking estimate | Independently enabled Google Routes walking request | `WALKING_ETA_UNAVAILABLE` | Sidewalk condition, crossing safety, step-free access, or accessibility |
+| Driving recovery | Open driving directions in Google Maps | Rider-selected coordinates and the Google Maps universal Directions URL | `EXTERNAL_HANDOFF_ONLY` | That Sakay calculated, verified, cached, or displays the provider’s driving route or time |
+| Walking recovery | Open walking directions in Google Maps | Rider-selected coordinates and the Google Maps universal Directions URL | `EXTERNAL_HANDOFF_ONLY` | That Sakay calculated, verified, cached, or displays the provider’s walking route or time |
 | Transit | Open transit options | Rider-selected coordinates and the Google Maps universal Directions URL | `EXTERNAL_HANDOFF_ONLY` | That Google Maps has a route, that its route/time is verified by Sakay, or any next-vehicle prediction |
 | MRT-3 timing | MRT-3 schedule reference | Published DOTr MRT-3 operating-period headway table | `SCHEDULED_HEADWAY_REFERENCE` | A next-train time, station arrival, vehicle location, delay, or live prediction |
 | PUV fare notice | User-supplied PUV fare notice | Dated image supplied to Sakay | `REFERENCE_ONLY` | A current calculated fare, route-specific fare, or rail fare |

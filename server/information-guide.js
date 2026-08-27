@@ -15,6 +15,12 @@ export function createInformationGuideStatus({ roadEtaProvider, walkingEtaProvid
           message: 'Google Maps may offer transit directions for the selected locations. Sakay does not import, verify, or cache the itinerary.',
         },
       },
+      externalDirections: {
+        availability: 'AVAILABLE',
+        provider: 'Google Maps',
+        scope: 'opens rider-selected origin and destination in an external Google Maps driving or walking directions view when a configured Sakay estimate is unavailable',
+        message: 'Google Maps determines any external route and time. Sakay does not import, verify, or cache the provider result.',
+      },
       roadEta: roadEtaProvider?.trafficStatus?.() || { availability: 'ROAD_ETA_UNAVAILABLE' },
       walkingEta: walkingEtaProvider?.walkingStatus?.() || { availability: 'WALKING_ETA_UNAVAILABLE' },
       roadInterruptions: roadInterruptionProvider?.status?.() || {

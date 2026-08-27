@@ -13,6 +13,8 @@ test('makes Sakay transit unavailability explicit while preserving an unverified
   assert.equal(state.transitRouting.code, 'NO_GOVERNED_TRANSIT_SCHEDULE');
   assert.equal(state.transitRouting.availability, 'EXTERNAL_HANDOFF_ONLY');
   assert.equal(state.transitRouting.handoff.availability, 'AVAILABLE');
+  assert.equal(state.externalDirections.availability, 'AVAILABLE');
+  assert.match(state.externalDirections.message, /does not import, verify, or cache/i);
   assert.equal(state.roadInterruptions.availability, 'VERIFIED_INTERRUPTION_UNAVAILABLE');
   assert.equal(state.roadEta.availability, 'ROAD_ETA_AVAILABLE');
   assert.equal(state.mapContext.availability, 'ADVISORY_ONLY');

@@ -181,3 +181,10 @@
 - [x] Evaluate a policy-compliant live traffic rendering path and retain the distinction between congestion visualization and verified road closures.
 - [x] Identify an authoritative, current road-interruption source and implement it only with verifiable provenance, timestamps, and safe stale/error behavior.
 - [x] Implement and validate every approved capability without converting estimates, historical figures, or map context into false live claims.
+
+## Operational Capability Continuation
+
+- [x] Reassess each remaining unavailable or configuration-gated capability for a safe, authorized activation path.
+- [x] Improve user-facing recovery and activation guidance for capabilities that remain dependent on external approval, credentials, or live authority data.
+- [x] Implement and test all additional functionality that can operate without inventing live transit, fare, road-closure, or accessibility information.
+- [x] Complete end-to-end validation and record the remaining external dependencies precisely.

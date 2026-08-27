@@ -186,20 +186,22 @@ try {
   await delay(500);
   const walkingEtaUnavailable = await evaluate(client, sessionId, `(() => {
     const panel = document.getElementById('results-panel');
-    const state = { visible: !panel.hidden, text: panel.textContent };
+    const handoff = document.getElementById('btn-external-directions-handoff');
+    const state = { visible: !panel.hidden, text: panel.textContent, handoff: handoff ? { href: handoff.href, target: handoff.target, rel: handoff.rel } : null };
     document.getElementById('btn-adjust-trip')?.click();
     return { ...state, plannerRecovered: !document.getElementById('search-panel').hidden };
   })()`);
-  if (!walkingEtaUnavailable.visible || !walkingEtaUnavailable.text.includes('Walking ETA unavailable.') || !walkingEtaUnavailable.plannerRecovered) throw new Error(`The unconfigured walking-ETA path did not remain distinct and recoverable: ${JSON.stringify(walkingEtaUnavailable)}`);
+  if (!walkingEtaUnavailable.visible || !walkingEtaUnavailable.text.includes('Walking ETA unavailable.') || !walkingEtaUnavailable.handoff?.href.includes('travelmode=walking') || walkingEtaUnavailable.handoff.target !== '_blank' || !walkingEtaUnavailable.handoff.rel.includes('noopener') || !walkingEtaUnavailable.plannerRecovered) throw new Error(`The unconfigured walking-ETA path did not preserve its external recovery option: ${JSON.stringify(walkingEtaUnavailable)}`);
   await evaluate(client, sessionId, `document.getElementById('btn-road-eta').click()`);
   await delay(500);
   const roadEtaUnavailable = await evaluate(client, sessionId, `(() => {
     const panel = document.getElementById('results-panel');
-    const state = { visible: !panel.hidden, text: panel.textContent };
+    const handoff = document.getElementById('btn-external-directions-handoff');
+    const state = { visible: !panel.hidden, text: panel.textContent, handoff: handoff ? { href: handoff.href, target: handoff.target, rel: handoff.rel } : null };
     document.getElementById('btn-adjust-trip')?.click();
     return { ...state, plannerRecovered: !document.getElementById('search-panel').hidden };
   })()`);
-  if (!roadEtaUnavailable.visible || !roadEtaUnavailable.text.includes('Traffic-aware road ETA unavailable.') || !roadEtaUnavailable.plannerRecovered) throw new Error(`The unconfigured road-ETA path did not remain distinct and recoverable: ${JSON.stringify(roadEtaUnavailable)}`);
+  if (!roadEtaUnavailable.visible || !roadEtaUnavailable.text.includes('Traffic-aware road ETA unavailable.') || !roadEtaUnavailable.handoff?.href.includes('travelmode=driving') || roadEtaUnavailable.handoff.target !== '_blank' || !roadEtaUnavailable.handoff.rel.includes('noopener') || !roadEtaUnavailable.plannerRecovered) throw new Error(`The unconfigured road-ETA path did not preserve its external recovery option: ${JSON.stringify(roadEtaUnavailable)}`);
   await evaluate(client, sessionId, `document.getElementById('btn-search').click()`);
   await delay(600);
   const unavailableState = await evaluate(client, sessionId, `(() => {

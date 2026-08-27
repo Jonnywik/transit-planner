@@ -4,6 +4,7 @@ import { createRoadEtaClient } from './road-eta-client.js';
 import { createWalkingEtaClient } from './walking-eta-client.js';
 import { createCapabilitiesClient } from './capabilities-client.js';
 import { createGoogleTransitDirectionsUrl } from './google-transit-handoff.js';
+import { createGoogleDirectionsUrl } from './google-directions-handoff.js';
 import { createGoogleTrafficMapUrl } from './google-traffic-handoff.js';
 import { getMrt3ScheduledHeadwayReference } from './mrt3-schedule-reference.js';
 import { createSearchRequestState } from './search-state.js';
@@ -862,6 +863,36 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
     resultsPanel.querySelector('#btn-adjust-trip').addEventListener('click', () => returnToPlanner({ focusDeparture }));
   }
 
+  function selectedTrip() {
+    if (!originCoords || !destinationCoords) return null;
+    return {
+      origin: { latitude: originCoords[0], longitude: originCoords[1] },
+      destination: { latitude: destinationCoords[0], longitude: destinationCoords[1] },
+    };
+  }
+
+  function renderExternalDirectionsRecovery({ title, message, travelMode, actionLabel }) {
+    const trip = selectedTrip();
+    const handoffUrl = trip ? createGoogleDirectionsUrl({ ...trip, travelMode }) : null;
+    showResultsPanel();
+    currentRoutes = null;
+    currentRouteSource = null;
+    clearMapLayers();
+    resultsPanel.innerHTML = `
+      <div class="results-header"><div><p class="eyebrow">${escapeHtml(travelMode)} options</p><h2 class="results-header__title">${escapeHtml(title)}</h2></div><button id="btn-close-results" class="results-header__close" title="Edit trip" aria-label="Edit trip">&times;</button></div>
+      <div class="results-empty results-empty--status" role="status" aria-live="polite">
+        <span class="results-empty__icon" aria-hidden="true">!</span>
+        <p>${escapeHtml(message)}</p>
+        <p class="results-empty__hint">Google Maps determines any external route and time. Sakay does not import, verify, or cache the provider result.</p>
+        ${handoffUrl ? `<a id="btn-external-directions-handoff" class="results-empty__action" target="_blank" rel="noopener noreferrer">${escapeHtml(actionLabel)}</a>` : ''}
+        <button type="button" id="btn-adjust-trip" class="results-empty__action">Edit trip</button>
+      </div>`;
+    resultsPanel.querySelector('#btn-close-results').addEventListener('click', returnToPlanner);
+    resultsPanel.querySelector('#btn-adjust-trip').addEventListener('click', returnToPlanner);
+    const handoff = resultsPanel.querySelector('#btn-external-directions-handoff');
+    if (handoff && handoffUrl) handoff.href = handoffUrl;
+  }
+
   function formatRoadDuration(seconds) {
     if (!Number.isFinite(seconds)) return 'Duration unavailable';
     return `${Math.max(1, Math.round(seconds / 60))} min`;
@@ -1357,7 +1388,7 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
       });
       renderRoadEta(result);
     } catch (error) {
-      renderAvailabilityState({ title: 'Traffic-aware road ETA unavailable.', message: error.message || 'Road travel time is not available. Transit schedules are not substituted.', icon: '!' });
+      renderExternalDirectionsRecovery({ title: 'Traffic-aware road ETA unavailable.', message: error.message || 'Road travel time is not available. Transit schedules are not substituted.', travelMode: 'driving', actionLabel: 'Open driving directions in Google Maps' });
     } finally {
       btnRoadEta.classList.remove('searching');
       btnRoadEta.textContent = 'Drive ETA';
@@ -1378,7 +1409,7 @@ import { mergeRecommendationCache, rankRecommendations } from './search-recommen
       });
       renderWalkingEta(result);
     } catch (error) {
-      renderAvailabilityState({ title: 'Walking ETA unavailable.', message: error.message || 'Walking travel time is not available. Sakay does not estimate it from straight-line distance.', icon: '!' });
+      renderExternalDirectionsRecovery({ title: 'Walking ETA unavailable.', message: error.message || 'Walking travel time is not available. Sakay does not estimate it from straight-line distance.', travelMode: 'walking', actionLabel: 'Open walking directions in Google Maps' });
     } finally {
       btnWalkingEta.classList.remove('searching');
       btnWalkingEta.textContent = 'Walk ETA';
