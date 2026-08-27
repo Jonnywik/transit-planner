@@ -31,6 +31,6 @@ jobs:
           build-mode: none
       # v3.28.17 — immutable SHA verified on 2026-08-27
       - name: Analyze
-        uses: github/codeql-action/analyze@6f5948dfacef28e207b48d0905cf90c03365536d
+        uses: github/codeql-action/analyze@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28
         with:
           category: /language:javascript-typescript
